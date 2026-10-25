@@ -1,0 +1,9 @@
+{
+  "name": "ScrapHub",
+  "short_name": "ScrapHub",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f4f7f5",
+  "theme_color": "#1b6b4a",
+  "icons": []
+}
