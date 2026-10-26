@@ -5,30 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#16A34A">
 <meta name="color-scheme" content="light">
-<title>ScrapDaddy — ScrapHub</title>
+<meta name="description" content="ScrapDaddy — connect households, local scrap vendors and recycling factories.">
+<title>ScrapDaddy</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<!-- ?v= is bumped on every release so browsers never serve a stale bundle -->
+<link rel="stylesheet" href="styles.css?v=1.0.1">
 </head>
 <body>
-<header class="top">
-  <button class="brand" data-act="goHome" aria-label="ScrapDaddy home"><span class="logo">♻️</span><span>Scrap<b>Daddy</b><small>.in · ScrapHub</small></span></button>
-  <nav id="roles" class="roles" aria-label="Switch portal"></nav>
-  <div class="tools">
-    <button class="btn ghost sm" data-act="toggleRates" aria-expanded="false">📈 Live rates</button>
-    <button class="btn ghost sm" data-act="reset">↺ Reset Demo Data</button>
+<a class="skip" href="#view">Skip to content</a>
+
+<div id="boot" class="boot"><div class="boot-in"><div class="boot-logo">♻️</div><div class="spinner"></div><p>Starting ScrapDaddy…</p></div></div>
+
+<div id="root" hidden>
+  <aside id="sidebar" class="sidebar" aria-label="Main navigation"></aside>
+  <div id="scrim" class="scrim" hidden></div>
+  <div class="main">
+    <header id="topbar" class="topbar"></header>
+    <div id="banner"></div>
+    <main id="view" tabindex="-1"></main>
   </div>
-</header>
-<div id="ticker" class="ticker" aria-label="Live scrap rates"></div>
-<section id="drawer" class="drawer" hidden></section>
-<main id="app"></main>
-<footer class="foot">
-  <div>♻️ ScrapDaddy.in — a managed circular-economy marketplace for India. Demo build: all data is stored in your browser.</div>
-</footer>
-<div id="modal" class="modal" hidden></div>
+</div>
+
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true"></div>
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
-<script src="app.js"></script>
+
+<script src="js/core.js?v=1.0.0"></script>
+<script src="js/auth.js?v=1.0.0"></script>
+<script src="js/ui.js?v=1.0.0"></script>
+<script src="js/portals.js?v=1.0.0"></script>
+<script src="js/admin.js?v=1.0.0"></script>
+<script src="js/app.js?v=1.0.0"></script>
 </body>
 </html>
