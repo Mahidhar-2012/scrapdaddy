@@ -22,9 +22,6 @@ const crypto = require('crypto');
 const { config } = require('./../_lib/config');
 const { handler, send, fail, readRaw } = require('./../_lib/http');
 
-/* Vercel must not parse the body: the signature is over the raw bytes. */
-module.exports.config = { api: { bodyParser: false } };
-
 function verifySignature(rawBody, signature, secret) {
   if (!signature || typeof signature !== 'string') return false;
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
@@ -77,3 +74,8 @@ module.exports = handler(['POST'], async (req, res) => {
   }
   send(res, 200, { received: true, verified: true, activated: !!result.stored, note: result.reason || null });
 });
+
+/* The signature is computed over the raw bytes, so the platform must not parse
+   the body first. This assignment has to come AFTER module.exports is set
+   above, or it is discarded. */
+module.exports.config = { api: { bodyParser: false } };

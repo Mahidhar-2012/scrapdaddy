@@ -44,7 +44,8 @@ const config = {
     scanPerHour: Number(process.env.SCAN_RATE_PER_HOUR || 20),
     chatPerHour: Number(process.env.CHAT_RATE_PER_HOUR || 60),
     maxImageBytes: Number(process.env.MAX_IMAGE_BYTES || 6 * 1024 * 1024),
-    upstreamTimeoutMs: Number(process.env.UPSTREAM_TIMEOUT_MS || 40000),
+    // Must stay below the host's function timeout (vercel.json: maxDuration 30).
+    upstreamTimeoutMs: Number(process.env.UPSTREAM_TIMEOUT_MS || 25000),
   },
 };
 

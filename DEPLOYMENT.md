@@ -56,6 +56,18 @@ Both work; the handler signature differs.
 
 ---
 
+### Notes on the Vercel config
+
+`vercel.json` sets only `maxDuration: 30` for `api/**/*.js`. Do not add a
+`runtime` key: there it means an npm runtime package name, and a value like
+`nodejs20.x` fails the build with *"Function Runtimes must have a valid
+version"*. Node functions need no runtime entry at all — an `api/` directory at
+the repo root is enough. The Node version comes from Project Settings.
+
+`UPSTREAM_TIMEOUT_MS` (25s) must stay below `maxDuration` (30s), so a slow
+provider returns a clean error instead of the function being killed. If you
+raise one, raise the other.
+
 ## Local development
 
 ```bash
