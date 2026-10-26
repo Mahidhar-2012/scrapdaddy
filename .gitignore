@@ -1,0 +1,12 @@
+# Never commit real credentials
+.env
+.env.*
+!.env.example
+
+node_modules/
+.vercel/
+.netlify/
+.wrangler/
+*.log
+.DS_Store
+Thumbs.db

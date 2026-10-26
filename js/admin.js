@@ -139,15 +139,40 @@ function viewAdminRates() {
     byHsn[k].taxable += o.taxable; byHsn[k].tax += o.gst; byHsn[k].kg += o.kg; byHsn[k].n++;
   });
   const groups = Object.keys(byHsn).map(k => byHsn[k]);
+  const region = Pricing.region;
   return `<section class="card">
-      <div class="card-h"><div><h3>Reference rates</h3>
-        <div class="t-xs muted">Updated ${timeAgo(DB.ratesUpdated || Date.now())} · shown to every portal</div></div>
-        <button class="btn btn-sm" data-act="saveRates">Save rates</button></div>
-      <div class="card-b"><div class="grid-2" style="gap:0 16px">
-        ${RATE_DEFS.map(r => field({ label: r.label + ' (₹ per ' + r.unit + ')', name: 'rate_' + r.key,
-          type: 'number', value: rateOf(r.key), attrs: ' min="0" step="1" data-rate="' + r.key + '"' })).join('')}
+      <div class="card-h"><div><h3>Reference prices</h3>
+        <div class="t-xs muted">Shown to every portal · area: ${esc(Pricing.regionLabel())}</div></div>
+        <div class="row" style="gap:8px">
+          <select class="input" style="width:auto;height:32px;font-size:13px" data-act="setRegion" aria-label="Pricing area">
+            ${Pricing.regions().map(r => `<option value="${esc(r.code)}"${r.code === region ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm" data-act="saveRates">Save changes</button>
+        </div></div>
+      <div class="card-b">
+        ${Pricing.status === 'error'
+          ? notice(`<strong>data/prices.json could not be loaded</strong> (${esc(Pricing.error || '')}). The app is running on
+             its built-in fallback rates. Anything you save here is stored as an override in this browser.`, 'danger', '⚠️')
+          : notice(`The price book lives in <code>data/prices.json</code> and can be edited there without touching any code.
+             Changes you make here are saved as <strong>overrides for ${esc(Pricing.regionLabel())}</strong>, recorded with
+             your name and the time, and they take precedence over the file.`, 'info', 'ℹ️')}
+        <div class="tw mt-4"><table>
+          <thead><tr><th>Material</th><th class="n">Price</th><th>Source in force</th><th>Updated</th><th></th></tr></thead>
+          <tbody>${Pricing.all(region).map(p => {
+            const over = Pricing.hasOverride(p.material, region);
+            const fr = FRESHNESS_LABEL[p.freshness] || FRESHNESS_LABEL.unknown;
+            return `<tr>
+              <td class="strong">${esc(p.label)}<div class="t-xs muted">per ${esc(p.unit)}</div></td>
+              <td class="n"><input class="input" style="height:32px;width:110px;text-align:right" type="number" min="0" step="1"
+                   value="${p.available ? p.price : ''}" placeholder="—" data-rate="${esc(p.material)}"
+                   aria-label="Price for ${esc(p.label)}"></td>
+              <td class="t-sm">${p.available ? esc((p.source && p.source.name) || '—') : '<span class="muted">No entry</span>'}
+                <div class="t-xs muted">${p.available ? esc(SOURCE_TYPE_LABEL[p.type] || 'Indicative') : ''}${p.inherited ? ' · inherited from national' : ''}</div></td>
+              <td class="nowrap">${p.updatedAt ? `<div class="t-sm">${timeAgo(p.updatedAt)}</div>` : ''}${badge(fr.text, fr.tone)}</td>
+              <td class="n">${over ? `<button class="btn btn-ghost btn-sm" data-act="clearOverride" data-v="${esc(p.material)}">Revert</button>` : ''}</td>
+            </tr>`;
+          }).join('')}</tbody></table></div>
       </div>
-      ${notice('These are hand-maintained reference prices, not a market feed. Phase 2 replaces this with a sourced pricing service that records provenance and update time.', 'amber', '⚠️')}</div>
     </section>
     <section class="card mt-6"><div class="card-h"><h3>GST by HSN code</h3>
       <span class="t-xs muted">From recorded factory orders</span></div>
@@ -212,14 +237,25 @@ A.toggleStatus = async d => {
 };
 A.saveRates = () => {
   if (!assertAdmin()) return;
+  const me = Auth.user();
+  const region = Pricing.region;
   let changed = 0;
   $$('[data-rate]').forEach(el => {
     const key = el.dataset.rate;
+    if (el.value === '') return;                       // left blank = leave as is
     const v = Math.max(0, Number(el.value) || 0);
-    if (v !== DB.rates[key]) { DB.rates[key] = v; changed++; }
+    const current = Pricing.get(key, region);
+    if (current.available && v === current.price) return;
+    Pricing.setOverride(key, region, v, me.name);
+    changed++;
   });
   if (!changed) return toast('No changes to save');
-  DB.ratesUpdated = Date.now();
-  saveDB(); Router.render();
-  toast(changed + ' rate' + (changed === 1 ? '' : 's') + ' updated');
+  Router.render();
+  toast(changed + ' price' + (changed === 1 ? '' : 's') + ' overridden for ' + Pricing.regionLabel());
+};
+A.clearOverride = d => {
+  if (!assertAdmin()) return;
+  Pricing.clearOverride(d.v, Pricing.region);
+  Router.render();
+  toast('Reverted to the price book');
 };

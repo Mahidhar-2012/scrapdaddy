@@ -9,11 +9,15 @@
 const View = {
   filters: {},
   form: null,
-  scanBusy: false,
-  scanResult: null,
-  sampleIdx: null,
   pendingWeight: null,
   renderResults: null,
+  // photo analysis
+  scanBusy: false,
+  scanReport: null,
+  scanError: null,
+  scanModel: null,
+  scanReady: null,     // null = not checked, true/false afterwards
+  scanReason: null,
 };
 const A = {};
 const filtersFor = (key, extra) => (View.filters[key] = View.filters[key] || blankFilter(extra));
@@ -83,24 +87,104 @@ function viewHouseholdOverview() {
     </div>`;
 }
 
+const PHOTO_QUALITY_HINT = {
+  blurry:   'The photo looks blurry. Hold still and tap to focus before taking it.',
+  too_dark: 'The photo is quite dark. More light would help a lot.',
+  too_far:  'The photo was taken from far away. Move closer so the material fills the frame.',
+  cluttered:'There is a lot in the frame. Photograph one pile at a time against a plain floor.',
+  partial:  'Only part of the material is visible. Step back a little so all of it is in shot.',
+  good:     null,
+};
+const CONFIDENCE_TONE = { high: 'brand', medium: 'amber', low: 'danger' };
+
 function photoBlock() {
   const f = View.form;
-  if (f.photo) {
-    return `<div class="shot"><img src="${esc(f.photo)}" alt="Photo of the scrap you are listing">
-        <button class="btn btn-2 btn-sm rm" data-act="rmPhoto">Remove</button></div>
-      <button class="btn btn-2 btn-block mt-3" data-act="scan" ${View.scanBusy ? 'disabled' : ''}>
-        ${View.scanBusy ? '<span class="spinner sm"></span> Reading photo…' : '✨ Run demo scan'}</button>
-      <p class="t-xs muted mt-2">Demo simulation — it fills the form from a sample list and does not look at your photo.
-        Real image recognition is Phase 2 work.</p>`;
+  if (!f.photo) {
+    return `<label class="drop" for="photoInput">
+        <div class="e">📷</div><div class="t">Add a photo</div>
+        <div class="h">Click to upload, drag a file here, or use your camera</div>
+        <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" hidden>
+      </label>
+      <p class="t-xs muted mt-2">JPEG, PNG, WebP or GIF, up to 6 MB. A photo is optional — you can list without one.</p>`;
   }
-  return `<label class="drop" for="photoInput">
-      <div class="e">📷</div><div class="t">Add a photo</div>
-      <div class="h">Click to upload, drag a file here, or use your camera</div>
-      <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
-    </label>
-    <p class="t-xs muted mt-2">No photo handy? Use a sample:</p>
-    <div class="chips mt-2">${['📷 Copper', '❄️ AC unit', '🧴 Bottles', '📰 Paper'].map((l, i) =>
-      `<button class="chip" data-act="samplePhoto" data-v="${i}">${l}</button>`).join('')}</div>`;
+  let action;
+  if (View.scanReady === false) {
+    action = `<div class="mt-3">${notice(`<strong>Photo analysis is not switched on.</strong><br>
+      ${esc(View.scanReason || 'No analysis service is configured for this deployment.')}
+      You can still fill the form in yourself.`, 'amber', 'ℹ️')}</div>`;
+  } else {
+    action = `<button class="btn btn-2 btn-block mt-3" data-act="scan" ${View.scanBusy || View.scanReady === null ? 'disabled' : ''}>
+        ${View.scanBusy ? '<span class="spinner sm"></span> Looking at your photo…'
+          : View.scanReady === null ? '<span class="spinner sm"></span> Checking…' : '🔍 Analyse this photo'}</button>
+      <p class="t-xs muted mt-2">Describes what is visible and suggests a category. It cannot judge weight, purity or grade
+        from a picture, and it can be wrong — always check the fields before publishing.</p>`;
+  }
+  return `<div class="shot"><img src="${esc(f.photo)}" alt="Photo of the scrap you are listing">
+      <button class="btn btn-2 btn-sm rm" data-act="rmPhoto">Remove</button></div>${action}`;
+}
+
+/** The structured report, rendered with every caveat the model returned. */
+function scanReportHtml() {
+  const r = View.scanReport;
+  if (!r) return '';
+  const tone = CONFIDENCE_TONE[r.confidence] || null;
+  const qualityHint = PHOTO_QUALITY_HINT[r.photoQuality];
+  const catLabel = CATS[r.materialCategory] ? CATS[r.materialCategory].label
+    : ({ mixed: 'Several materials', not_scrap: 'Not recyclable scrap', unclear: 'Could not tell' }[r.materialCategory] || r.materialCategory);
+
+  // A value is shown only when the user has supplied a quantity AND we have a
+  // price for the suggested material. Otherwise we say why not.
+  let valueBlock = '';
+  const qty = Number(View.form.qty) || 0;
+  const priced = r.priceKey && RATE_DEFS.some(d => d.key === r.priceKey) ? Pricing.get(r.priceKey) : null;
+  if (qty > 0 && priced && priced.available) {
+    const kg = kgOf(View.form.qty, r.priceKey, View.form.unit);
+    const value = (View.form.unit === 'pieces' ? qty : kg) * priced.price;
+    valueBlock = `<div class="scan-value">
+        <div><div class="t-xs muted">Indicative value at your stated quantity</div>
+          <div class="strong" style="font-size:20px">${inr(value)}</div></div>
+        <div class="t-xs muted" style="text-align:right;max-width:52%">
+          ${esc(priceSourceLine(priced))}<br>Your quantity, not a measured one.</div>
+      </div>`;
+  } else {
+    const why = qty > 0 ? 'we have no price on file for that material in your area'
+      : 'you have not entered a quantity yet';
+    valueBlock = `<div class="scan-value muted t-sm">No value shown because ${why}.
+      A photograph cannot establish weight — the collector weighs it on a digital scale.</div>`;
+  }
+
+  const list = (title, items, icon) => items && items.length
+    ? `<div class="scan-sec"><div class="scan-sec-h">${icon} ${esc(title)}</div>
+       <ul class="scan-list">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>` : '';
+
+  return `<section class="card scan-report mt-3">
+    <div class="card-h">
+      <div><h3>What the photo shows</h3>
+        <div class="t-xs muted">AI prediction, not a verified measurement</div></div>
+      ${badge(r.confidence + ' confidence', tone)}
+    </div>
+    <div class="card-b">
+      <div class="scan-head">
+        <div><div class="t-xs muted">Likely category</div><div class="strong t-lg">${esc(catLabel)}</div></div>
+        ${r.materialSubtype ? `<div><div class="t-xs muted">Looks like</div><div class="strong">${esc(r.materialSubtype)}</div></div>` : ''}
+      </div>
+      ${r.summary ? `<p class="mt-3">${esc(r.summary)}</p>` : ''}
+      ${r.confidenceReason ? `<p class="t-sm muted mt-2">${esc(r.confidenceReason)}</p>` : ''}
+      ${qualityHint ? `<div class="mt-3">${notice(esc(qualityHint) + ' <button class="btn-link" data-act="rmPhoto">Try another photo</button>', 'amber', '📷')}</div>` : ''}
+      ${valueBlock}
+      ${r.condition ? `<div class="scan-sec"><div class="scan-sec-h">🔎 Condition</div><p class="t-sm">${esc(r.condition)}</p></div>` : ''}
+      ${list('Visible items', r.visibleItems, '📦')}
+      ${list('Contamination to expect', r.contamination, '⚠️')}
+      ${r.quantityAssessment ? `<div class="scan-sec"><div class="scan-sec-h">⚖️ Quantity</div><p class="t-sm">${esc(r.quantityAssessment)}</p></div>` : ''}
+      ${list('Safety', r.safetyNotes, '🧤')}
+      ${list('What this photo cannot tell us', r.limitations, '🚫')}
+      ${list('Would help to know', r.needFromUser, '❓')}
+    </div>
+    <div class="card-f t-xs muted">
+      ${View.scanModel ? 'Analysed by ' + esc(View.scanModel) + '. ' : ''}Fields on the right were filled in from this —
+      correct anything that looks wrong before publishing.
+    </div>
+  </section>`;
 }
 
 function sellForm() {
@@ -115,7 +199,8 @@ function sellForm() {
       <h3>1. Photo</h3>
       <p class="t-sm muted" style="margin:4px 0 14px">A clear, well-lit photo helps the vendor quote accurately.</p>
       <div id="photoBlock">${photoBlock()}</div>
-      ${View.scanResult ? `<div class="mt-3">${notice('<strong>Simulated scan:</strong> ' + esc(View.scanResult), 'amber', '✨')}</div>` : ''}
+      ${View.scanError ? `<div class="mt-3">${notice(esc(View.scanError), 'danger', '⚠️')}</div>` : ''}
+      ${scanReportHtml()}
     </section>
     <section class="card card-p">
       <h3>2. Details</h3>
@@ -202,31 +287,62 @@ function viewHouseholdListings() {
 
 /* ---------- household actions ---------- */
 A.setMode = d => { View.form.mode = d.v; redrawSell(); };
-A.rmPhoto = () => { View.form.photo = ''; View.scanResult = null; View.sampleIdx = null; redrawSell(); };
-A.samplePhoto = d => {
-  const set = [['🔌', '#FEF3C7', '#FDE68A'], ['❄️', '#DBEAFE', '#BFDBFE'], ['🧴', '#D1FAE5', '#A7F3D0'], ['📰', '#FEF9C3', '#FEF08A']];
-  const i = clamp(Number(d.v) || 0, 0, set.length - 1);
-  View.sampleIdx = [0, 7, 4, 5][i];
-  View.form.photo = svgPhoto(set[i][0], set[i][1], set[i][2]);
-  View.scanResult = null;
+A.rmPhoto = () => {
+  View.form.photo = '';
+  View.scanReport = null; View.scanError = null; View.scanModel = null;
   redrawSell();
-  toast('Sample photo added');
 };
 A.scan = async () => {
   const f = View.form;
   if (!f.photo) return toast('Add a photo first', 'warn');
-  View.scanBusy = true; redrawSell();
-  await sleep(1100);
-  const idx = View.sampleIdx != null ? View.sampleIdx : (f.photo.length % SCAN_PRESETS.length);
-  const p = SCAN_PRESETS[idx];
-  const piece = !!PIECE_KG[p.rk];
-  const qty = piece ? 1 : Math.max(1, Math.round(p.kg * (0.85 + (f.photo.length % 30) / 100)));
-  Object.assign(f, { cat: p.cat, rk: p.rk, title: p.title, qty: String(qty), unit: piece ? 'pieces' : 'kg' });
-  View.scanResult = `${p.title} — about ${piece ? qty + ' unit' : qty + ' kg'}. Fields below were filled in for you; please correct anything that looks wrong.`;
-  View.scanBusy = false; View.sampleIdx = null;
+  if (View.scanBusy) return;
+  View.scanBusy = true; View.scanError = null; View.scanReport = null;
   redrawSell();
-  toast('Demo scan filled the form');
+
+  const res = await Scanner.analyse(f.photo, {
+    knownWeightKg: f.unit === 'kg' && Number(f.qty) > 0 ? Number(f.qty) : null,
+    locality: f.locality || null,
+  });
+  View.scanBusy = false;
+
+  if (!res.ok) {
+    View.scanError = res.error;
+    if (res.status === 503) { View.scanReady = false; View.scanReason = res.error; }
+    redrawSell();
+    toast('The photo could not be analysed', 'err');
+    return;
+  }
+
+  const r = res.report;
+  View.scanReport = r;
+  View.scanModel = res.model;
+
+  // Fill only the fields the report genuinely supports, and never the quantity.
+  if (r.materialCategory && CATS[r.materialCategory]) {
+    f.cat = r.materialCategory;
+    const allowed = MATERIALS[f.cat].map(m => m[0]);
+    f.rk = (r.priceKey && allowed.indexOf(r.priceKey) >= 0) ? r.priceKey : allowed[0];
+    f.unit = PIECE_KG[f.rk] ? 'pieces' : 'kg';
+  } else if (r.priceKey) {
+    const cat = Object.keys(MATERIALS).find(c => MATERIALS[c].some(m => m[0] === r.priceKey));
+    if (cat) { f.cat = cat; f.rk = r.priceKey; f.unit = PIECE_KG[f.rk] ? 'pieces' : 'kg'; }
+  }
+  if (!f.title && r.materialSubtype) f.title = r.materialSubtype;
+  if (!f.desc && r.condition) f.desc = r.condition;
+
+  redrawSell();
+  if (r.materialCategory === 'not_scrap') toast('That does not look like recyclable scrap', 'warn');
+  else if (r.confidence === 'low') toast('Analysed, but confidence is low — please check the fields', 'warn');
+  else toast('Photo analysed');
 };
+/** Checks once per sell-page visit whether analysis is available. */
+async function refreshScanAvailability() {
+  const health = await Api.health();
+  const ok = !!(health.ok && health.providers.vision.configured);
+  View.scanReady = ok;
+  View.scanReason = ok ? null : (health.providers.vision.reason || health.error);
+  if ((location.hash || '').indexOf('#/household/sell') === 0) redrawSell();
+}
 A.publish = () => {
   const f = View.form, u = Auth.user();
   const e = {};
@@ -251,7 +367,8 @@ A.publish = () => {
   };
   DB.listings.unshift(listing);
   if (!saveDB()) return toast('Could not save — browser storage is full', 'err');
-  View.form = blankSellForm(); View.scanResult = null;
+  View.form = blankSellForm();
+  View.scanReport = null; View.scanError = null; View.scanModel = null;
   Router.go('#/household/listings');
   toast('Listing published — vendors nearby can see it now');
 };
@@ -267,7 +384,7 @@ A.acceptBid = d => {
   if (!l || l.owner !== Auth.user().id) return toast('Listing not found', 'err');
   const b = (l.bids || []).find(x => x.vendor === d.v);
   if (!b) return toast('That offer is no longer available', 'warn');
-  Object.assign(l, { stage: 1, vendor: b.vendor, finalPrice: b.amount });
+  Object.assign(l, { stage: 1, vendor: b.vendor, finalPrice: b.amount, acceptedAt: Date.now() });
   saveDB(); Router.render();
   toast(`Accepted ${inr(b.amount)} from ${b.name}`);
 };
@@ -404,6 +521,8 @@ A.call = d => {
 };
 A.bid = d => {
   const v = requireApprovedVendor(); if (!v) return;
+  const blocked = Subscriptions.check(v.id, 'accept_job');
+  if (blocked) return planBlocked(blocked);
   const l = listingById(d.id);
   const input = $('#bid-' + d.id);
   const amount = Math.round(Number(input && input.value) || 0);
@@ -413,11 +532,26 @@ A.bid = d => {
   saveDB(); Router.render();
   toast(`Bid of ${inr(amount)} sent to the household`);
 };
+/** Entitlement refusals get a dialog with a way out, not just a toast. */
+function planBlocked(reason) {
+  Modal.open({
+    title: 'Your plan does not allow this',
+    body: `<p class="lead">${esc(reason)}</p>
+      <p class="t-sm muted mt-3">Upgrading lifts the limit straight away once payment is confirmed. You can also wait for
+      the monthly reset, or finish some pickups that are already in progress.</p>`,
+    footer: `<button class="btn btn-2" data-act="modalClose">Not now</button>
+             <button class="btn" data-act="goPlans" data-autofocus>See plans</button>`,
+  });
+}
+A.goPlans = () => { Modal.close(); Router.go('#/vendor/plan'); };
+
 A.claim = d => {
   const v = requireApprovedVendor(); if (!v) return;
+  const blocked = Subscriptions.check(v.id, 'accept_job');
+  if (blocked) return planBlocked(blocked);
   const l = listingById(d.id);
   if (!l || l.stage !== 0) return toast('This job has already been taken', 'warn');
-  Object.assign(l, { stage: 1, vendor: v.id, finalPrice: l.ask });
+  Object.assign(l, { stage: 1, vendor: v.id, finalPrice: l.ask, acceptedAt: Date.now() });
   saveDB(); Router.go('#/vendor/pickups');
   toast('Pickup accepted — weigh the material on arrival');
 };
@@ -463,6 +597,8 @@ A.toHub = d => {
 };
 A.consolidate = d => {
   const v = requireApprovedVendor(); if (!v) return;
+  const blocked = Subscriptions.check(v.id, 'publish_lot');
+  if (blocked) return planBlocked(blocked);
   const cat = d.v;
   const inv = DB.listings.filter(l => l.vendor === v.id && l.stage === 3 && !l.inLot && l.cat === cat);
   if (!inv.length) return;
@@ -635,23 +771,174 @@ A.certDownload = d => {
 /* =========================================================================
    SHARED: rates + account
    ========================================================================= */
-function viewRates() {
-  const isAdmin = Auth.role() === 'admin';
-  return `${notice(`<strong>Indicative reference rates.</strong> Maintained by hand inside ScrapDaddy and shown for
-      guidance only — they are not a live market feed and not a firm offer. Sourced pricing is Phase 2 work.`, 'amber', '⚠️')}
-    <section class="card mt-4">
-      <div class="card-h"><div><h3>Scrap rates</h3>
-        <div class="t-xs muted">Updated ${timeAgo(DB.ratesUpdated || Date.now())} · all prices in INR</div></div>
-        ${isAdmin ? '<a class="btn btn-2 btn-sm" href="#/admin/rates">Edit rates</a>' : ''}</div>
-      <div class="tw"><table>
-        <thead><tr><th>Material</th><th>Category</th><th class="n">Rate</th><th>Unit</th></tr></thead>
-        <tbody>${RATE_DEFS.map(r => `<tr>
-          <td class="strong">${esc(r.label)}</td>
-          <td class="muted">${esc((CATS[Object.keys(CATS).find(c => (MATERIALS[c] || []).some(m => m[0] === r.key))] || {}).label || '—')}</td>
-          <td class="n strong">${inr(rateOf(r.key))}</td><td class="muted">per ${esc(r.unit)}</td></tr>`).join('')}
-        </tbody></table></div>
-    </section>`;
+/* ---------- scrap prices ---------- */
+function priceRowsHtml() {
+  const f = filtersFor('prices');
+  const q = String(f.q || '').trim().toLowerCase();
+  const rows = Pricing.all(Pricing.region).filter(p => {
+    if (f.cat !== 'all') {
+      const cat = Object.keys(MATERIALS).find(c => MATERIALS[c].some(m => m[0] === p.material));
+      if (cat !== f.cat) return false;
+    }
+    return !q || (p.label + ' ' + p.material).toLowerCase().indexOf(q) >= 0;
+  });
+  if (!rows.length) return emptyState({ icon: '🔍', title: 'No materials match', text: 'Try a different search or category.' });
+  return `<section class="card"><div class="tw"><table>
+    <thead><tr><th>Material</th><th class="n">Price</th><th>Published range</th><th>Source</th><th>Updated</th></tr></thead>
+    <tbody>${rows.map(p => {
+      const fr = FRESHNESS_LABEL[p.freshness] || FRESHNESS_LABEL.unknown;
+      if (!p.available) {
+        return `<tr><td class="strong">${esc(p.label)}</td>
+          <td class="n muted">Not available</td><td class="muted">—</td>
+          <td class="muted t-sm">No entry for ${esc(Pricing.regionLabel())}</td>
+          <td>${badge('Unavailable', 'danger')}</td></tr>`;
+      }
+      return `<tr>
+        <td class="strong">${esc(p.label)}${p.inherited ? ' <span class="badge">national</span>' : ''}</td>
+        <td class="n strong nowrap">${inr(p.price)} <span class="t-xs muted">/${esc(p.unit)}</span></td>
+        <td class="muted t-sm nowrap">${p.marketRange ? inr(p.marketRange[0]) + ' – ' + inr(p.marketRange[1]) : '—'}</td>
+        <td class="t-sm"><div>${esc((p.source && p.source.name) || '—')}</div>
+          <div class="t-xs muted">${esc(SOURCE_TYPE_LABEL[p.type] || 'Indicative')}${
+            p.source && p.source.url ? ` · <a href="${esc(p.source.url)}" target="_blank" rel="noopener noreferrer">source</a>` : ''}</div></td>
+        <td class="nowrap">${p.updatedAt ? `<div class="t-sm">${timeAgo(p.updatedAt)}</div>` : ''}${badge(fr.text, fr.tone)}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>
+    <div class="card-f t-xs muted">Prices are per kilogram unless the unit says otherwise. A vendor may quote differently
+      for condition, sorting or quantity — the amount you are paid is agreed at pickup, after weighing.</div>
+  </section>`;
 }
+
+function viewPrices() {
+  const f = filtersFor('prices');
+  View.renderResults = () => { const el = $('#results'); if (el) el.innerHTML = priceRowsHtml(); };
+  const isAdmin = Auth.role() === 'admin';
+  const updated = Pricing.lastUpdated();
+  const loadFailed = Pricing.status === 'error';
+
+  const banner = loadFailed
+    ? notice(`<strong>The price book could not be loaded.</strong> Showing the rates built into the app instead.
+        <span class="t-xs">(${esc(Pricing.error || '')})</span>`, 'danger', '⚠️')
+    : notice(`<strong>These are reference prices, not live market data.</strong> Each row shows where its number came from
+        and when it was last changed. They guide you; the amount paid is agreed at pickup after weighing.`, 'amber', 'ℹ️');
+
+  return `${banner}
+    <div class="toolbar mt-4">
+      <div class="input-group"><span class="ic">🔍</span>
+        <input class="input" type="search" data-filter="q" value="${esc(f.q)}" placeholder="Search a material…" aria-label="Search materials">
+      </div>
+      <div class="chips">${CAT_FILTERS.map(([k, l]) =>
+        `<button class="chip" data-act="setCat" data-v="${k}" aria-pressed="${f.cat === k}">${esc(l)}</button>`).join('')}</div>
+      <label class="row t-sm" style="gap:6px">
+        <span class="muted">Area</span>
+        <select class="input" style="width:auto;height:32px;font-size:13px" data-act="setRegion" aria-label="Pricing area">
+          ${Pricing.regions().map(r => `<option value="${esc(r.code)}"${r.code === Pricing.region ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}
+        </select>
+      </label>
+      <button class="btn btn-2 btn-sm" data-act="reloadPrices">↻ Refresh</button>
+      ${isAdmin ? '<a class="btn btn-2 btn-sm" href="#/admin/rates">Edit</a>' : ''}
+    </div>
+    <div class="resbar"><span class="n">${
+      updated ? 'Newest entry updated ' + timeAgo(updated) : 'Update times unknown'
+    } · ${esc(Pricing.regionLabel())}</span></div>
+    <div id="results">${priceRowsHtml()}</div>`;
+}
+A.setRegion = (d, el) => { Pricing.setRegion(el.value); Router.render(); };
+A.reloadPrices = async () => {
+  Pricing._cacheBusted = true;
+  const status = await Pricing.load();
+  Router.render();
+  toast(status === 'ready' ? 'Price book reloaded' : 'Could not reload the price book', status === 'ready' ? 'ok' : 'err');
+};
+
+/* ---------- vendor plan & billing ---------- */
+function viewVendorPlan() {
+  const v = myVendor();
+  const sub = Subscriptions.forVendor(v.id);
+  const current = Subscriptions.effectivePlan(v.id);
+  const usage = Subscriptions.usage(v.id);
+  const st = SUB_STATUS[sub.status] || SUB_STATUS.active;
+  const unpaid = sub.status === 'pending_payment';
+
+  return `<section class="card">
+      <div class="card-h"><div><h3>Your plan</h3>
+        <div class="t-xs muted">Billing for ${esc(v.hub)}</div></div>${badge(st.label, st.tone)}</div>
+      <div class="card-b">
+        <div class="split even">
+          <div>
+            <div class="t-xs muted">Active plan</div>
+            <div class="strong" style="font-size:22px">${esc(current.name)}${current.price ? ' · ' + inr(current.price) + '/month' : ' · free'}</div>
+            ${unpaid && sub.planId !== current.id ? `<div class="mt-2">${notice(
+              `<strong>${esc(planById(sub.planId).name)} is not active.</strong> It starts only once payment is confirmed,
+               so you are still on ${esc(current.name)}.`, 'amber', '⏳')}</div>` : ''}
+            ${sub.cancelAtPeriodEnd ? `<div class="mt-2">${notice('This plan will not renew. You keep its features until the period ends.', 'amber', 'ℹ️')}</div>` : ''}
+            ${sub.renewsAt ? `<div class="t-sm muted mt-2">Renews ${new Date(sub.renewsAt).toLocaleDateString('en-IN')}</div>` : ''}
+          </div>
+          <div>
+            <div class="t-xs muted">Pickups accepted this month</div>
+            <div class="strong" style="font-size:22px">${usage.jobsUsed}${usage.jobsLimit === Infinity ? '' : ' / ' + usage.jobsLimit}</div>
+            ${usage.jobsLimit === Infinity ? '<div class="t-sm muted">Unlimited on this plan</div>'
+              : `<div class="pw-meter mt-2"><i style="width:${usage.pct}%;background:${usage.pct >= 100 ? 'var(--danger)' : usage.pct >= 80 ? 'var(--amber)' : 'var(--brand)'}"></i></div>
+                 <div class="t-xs muted mt-2">${usage.jobsLeft} left · resets on the 1st</div>`}
+            <div class="t-sm muted mt-3">In progress now: ${usage.openUsed}${usage.openLimit === Infinity ? '' : ' of ' + usage.openLimit}</div>
+          </div>
+        </div>
+        ${sub.planId !== 'free' && !sub.cancelAtPeriodEnd
+          ? `<button class="btn btn-2 btn-sm mt-4" data-act="planCancel">Cancel plan</button>`
+          : sub.cancelAtPeriodEnd ? `<button class="btn btn-2 btn-sm mt-4" data-act="planResume">Keep my plan</button>` : ''}
+      </div>
+    </section>
+
+    <h3 class="mt-6">Plans</h3>
+    <p class="t-sm muted mt-2">Prices in INR, billed monthly. Change or cancel whenever you like.</p>
+    <div class="plans mt-3">${PLANS.map(p => {
+      const isCurrent = p.id === current.id;
+      const isRequested = p.id === sub.planId && unpaid;
+      return `<div class="card plan${isCurrent ? ' is-current' : ''}">
+        ${p.badge ? `<div class="plan-badge">${esc(p.badge)}</div>` : ''}
+        <div class="card-b">
+          <div class="row-between"><h4>${esc(p.name)}</h4>${isCurrent ? badge('Current', 'brand') : isRequested ? badge('Awaiting payment', 'amber') : ''}</div>
+          <div class="plan-price">${p.price ? inr(p.price) : 'Free'}${p.price ? '<span>/month</span>' : ''}</div>
+          <p class="t-sm muted">${esc(p.tagline)}</p>
+          <ul class="plan-feat">${p.features.map(ft => `<li><span class="tick">✓</span>${esc(ft)}</li>`).join('')}
+            ${p.limits.map(l => `<li class="no"><span class="tick">✕</span>${esc(l)}</li>`).join('')}</ul>
+          ${isCurrent ? '<button class="btn btn-2 btn-block" disabled>Your plan</button>'
+            : `<button class="btn${p.price ? '' : ' btn-2'} btn-block" data-act="planChange" data-v="${p.id}">
+                 ${p.price > current.price ? 'Upgrade' : 'Switch'} to ${esc(p.name)}</button>`}
+        </div></div>`;
+    }).join('')}</div>
+    <div id="billingNote" class="mt-4"></div>`;
+}
+
+A.planChange = async d => {
+  const v = myVendor(); if (!v) return;
+  const plan = planById(d.v);
+  if (plan.price > 0) {
+    const ok = await confirmDialog({
+      title: `Switch to ${plan.name}?`,
+      body: `${plan.name} is ${inr(plan.price)} a month. The plan starts only after payment is confirmed.`,
+      confirmLabel: 'Continue',
+    });
+    if (!ok) return;
+  }
+  const res = await Subscriptions.requestChange(v.id, d.v);
+  Router.render();
+  const note = $('#billingNote');
+  if (note && !res.ok) note.innerHTML = notice(esc(res.message), 'amber', '⏳');
+  toast(res.message, res.ok ? 'ok' : 'warn');
+};
+A.planCancel = async () => {
+  const v = myVendor(); if (!v) return;
+  if (!(await confirmDialog({ title: 'Cancel your plan?',
+    body: 'You keep the current features until the period ends, then move to the free Starter plan.',
+    confirmLabel: 'Cancel plan', danger: true }))) return;
+  const res = Subscriptions.cancel(v.id);
+  Router.render(); toast(res.message, res.ok ? 'ok' : 'warn');
+};
+A.planResume = () => {
+  const v = myVendor(); if (!v) return;
+  const res = Subscriptions.resume(v.id);
+  Router.render(); toast(res.message, res.ok ? 'ok' : 'warn');
+};
 
 function viewAccount() {
   const u = Auth.user();
@@ -687,8 +974,74 @@ function viewAccount() {
       <p class="t-sm muted mt-2">Restores the sample listings, lots and rates. Your account is not deleted.</p>
       <button class="btn btn-2 mt-3" data-act="resetDemo">Reset demo data</button>
     </section>
-  </div>`;
+  </div>
+  ${u.role === 'admin' ? integrationsCard() : ''}`;
 }
+
+/* ---------- integrations (administrators only) ---------- */
+function integrationsCard() {
+  const base = Api.configuredBase();
+  const h = View.healthSnapshot;
+  const row = (label, p) => {
+    if (!p) return '';
+    const probe = p.probe;
+    let detail;
+    if (!p.configured) detail = p.reason || 'Not configured';
+    else if (probe && probe.reachable === false) detail = probe.reason || 'Could not reach the provider';
+    else if (probe && probe.modelAvailable === false) detail = `Key works, but "${p.model}" is not available to it${
+      probe.availableModels ? '. Available: ' + probe.availableModels.slice(0, 6).join(', ') : ''}`;
+    else if (probe && probe.modelAvailable) detail = `Key and model verified · ${p.model}`;
+    else detail = `Key present · ${p.model || p.provider}`;
+    const ok = p.configured && (!probe || (probe.reachable !== false && probe.modelAvailable !== false));
+    return `<div class="kv"><span class="k">${esc(label)}</span>
+      <span class="v">${badge(ok ? 'Ready' : p.configured ? 'Check needed' : 'Not configured', ok ? 'brand' : p.configured ? 'amber' : null)}</span></div>
+      <div class="t-xs muted" style="margin:-2px 0 8px">${esc(detail)}</div>`;
+  };
+  return `<section class="card card-p mt-4">
+    <h3>Integrations</h3>
+    <p class="t-sm muted" style="margin:4px 0 14px">Photo analysis, the assistant and payments run on a ScrapDaddy
+      backend that holds the API keys. Keys are never stored in the browser. Leave the address blank to use a backend
+      deployed alongside this site.</p>
+    ${field({ label: 'Backend address', name: 'api_base', value: base || '',
+      placeholder: 'https://your-project.vercel.app/api',
+      hint: 'Must end in /api. Leave empty for same-origin.' })}
+    <div class="row" style="gap:8px">
+      <button class="btn" data-act="saveApiBase">Save and test</button>
+      <button class="btn btn-2" data-act="testApi">Test connection</button>
+    </div>
+    ${h ? `<div class="mt-4">
+      ${h.ok ? '' : notice(esc(h.error || 'No backend is reachable at that address.'), 'amber', '⚠️')}
+      <div class="mt-3">
+        ${row('Photo analysis (OpenAI)', h.providers && h.providers.vision)}
+        ${row('Assistant (Groq)', h.providers && h.providers.chat)}
+        ${row('Payments (Razorpay)', h.providers && h.providers.payments)}
+      </div>
+      ${h.providers && h.providers.payments && h.providers.payments.persistence === 'missing'
+        ? notice(`Payments can be taken but not stored: subscription state lives in each browser, which a payment webhook
+            cannot reach. Activating paid plans automatically needs a database. See <code>api/billing/webhook.js</code>.`, 'amber', 'ℹ️') : ''}
+    </div>` : '<p class="t-sm muted mt-3">Not tested yet.</p>'}
+  </section>`;
+}
+A.saveApiBase = async () => {
+  const el = $('[data-input="api_base"]');
+  const val = (el && el.value || '').trim();
+  if (val && !/^https?:\/\//i.test(val)) return toast('The address must start with http:// or https://', 'warn');
+  Api.setBase(val);
+  toast(val ? 'Backend address saved' : 'Using a same-origin backend');
+  await A.testApi();
+};
+A.testApi = async () => {
+  toast('Testing the backend…');
+  Api.reset(); Billing.reset();
+  const res = await Api.get('health?probe=1', { timeout: 15000 });
+  View.healthSnapshot = res.ok && res.data && res.data.providers
+    ? Object.assign({ ok: true }, res.data)
+    : { ok: false, error: res.error, providers: null };
+  Api.reset();
+  Chat.ready = null; View.scanReady = null;
+  Router.render();
+  toast(View.healthSnapshot.ok ? 'Backend reachable' : 'Backend not reachable', View.healthSnapshot.ok ? 'ok' : 'err');
+};
 
 A.saveProfile = () => {
   const get = n => { const el = $('[data-input="' + n + '"]'); return el ? el.value.trim() : ''; };

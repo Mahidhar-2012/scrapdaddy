@@ -146,6 +146,7 @@ const ROUTES = [
   { path: '#/vendor/find',    roles: ['vendor'], title: 'Jobs board',    subtitle: 'Open pickups near you', render: viewVendorFind },
   { path: '#/vendor/pickups', roles: ['vendor'], title: 'My pickups',    subtitle: 'Weigh, pay and move to hub', render: viewVendorPickups },
   { path: '#/vendor/hub',     roles: ['vendor'], title: 'Hub inventory', subtitle: 'Bale and publish factory lots', render: viewVendorHub },
+  { path: '#/vendor/plan',    roles: ['vendor'], title: 'Plan & billing', subtitle: 'Your subscription and limits', render: viewVendorPlan },
 
   { path: '#/factory',        roles: ['factory'], title: 'Overview',    subtitle: 'Supply and purchasing', render: viewFactoryOverview },
   { path: '#/factory/market', roles: ['factory'], title: 'Marketplace', subtitle: 'Graded lots and direct listings', render: viewFactoryMarket },
@@ -157,8 +158,8 @@ const ROUTES = [
   { path: '#/admin/accounts', roles: ['admin'], title: 'Accounts',          subtitle: 'Roles and access', render: viewAdminAccounts },
   { path: '#/admin/rates',    roles: ['admin'], title: 'Rates & compliance', subtitle: 'Reference prices and GST', render: viewAdminRates },
 
-  { path: '#/rates',   roles: ROLES, title: 'Scrap rates', subtitle: 'Indicative reference prices', render: viewRates },
-  { path: '#/account', roles: ROLES, title: 'Settings',    subtitle: 'Profile, password and session', render: viewAccount },
+  { path: '#/rates',   roles: ROLES, title: 'Scrap prices', subtitle: 'Reference prices with their sources', render: viewPrices },
+  { path: '#/account', roles: ROLES, title: 'Settings',     subtitle: 'Profile, password and session', render: viewAccount },
 ];
 
 /* ---------- router with access guards ---------- */
@@ -210,6 +211,8 @@ const Router = {
     $('#sidebar').hidden = true;
     $('#topbar').hidden = true;
     $('#banner').innerHTML = '';
+    Chat.open = false;
+    Chat.mount();
     document.body.classList.add('is-auth');
     $('#view').style.padding = '0';
     $('#view').style.maxWidth = 'none';
@@ -227,7 +230,11 @@ const Router = {
     renderDemoBanner();
     $('#view').innerHTML = html;
     closeNav();
-    if (route.path === '#/household/sell') bindPhotoInput();
+    Chat.mount();
+    if (route.path === '#/household/sell') {
+      bindPhotoInput();
+      if (View.scanReady === null) refreshScanAvailability();
+    }
   },
   start() {
     window.addEventListener('hashchange', () => { Modal.close(); this.render(); window.scrollTo(0, 0); });
@@ -252,7 +259,9 @@ A.useDemo = d => {
 };
 A.signOut = () => {
   Auth.signOut();
-  View.filters = {}; View.form = null; View.scanResult = null;
+  View.filters = {}; View.form = null;
+  View.scanReport = null; View.scanError = null; View.healthSnapshot = null;
+  Chat.open = false; Chat.messages = []; Chat.stopListening(); Chat.shutUp();
   AuthForm.email = ''; AuthForm.password = ''; AuthForm.error = null;
   Router.go('#/login');
   toast('Signed out');
@@ -337,6 +346,10 @@ document.addEventListener('submit', e => {
   if (kind === 'signin') submitSignIn();
   else if (kind === 'signup') submitSignUp();
   else if (kind === 'reset') submitReset();
+  else if (kind === 'chat') {
+    const input = $('#chatInput');
+    if (input && input.value.trim()) { const v = input.value; input.value = ''; Chat.send(v); }
+  }
 });
 
 document.addEventListener('click', e => {
@@ -355,7 +368,8 @@ document.addEventListener('click', e => {
 
 document.addEventListener('change', e => {
   const el = e.target;
-  if (el.dataset.act === 'setRole') { A.setRole(el.dataset, el); return; }
+  // selects carry their action here, since the click handler skips them
+  if (el.tagName === 'SELECT' && el.dataset.act && A[el.dataset.act]) { A[el.dataset.act](el.dataset, el); return; }
   if (el.dataset.filter) return; // handled on input
   const name = el.dataset.input;
   if (!name) return;
@@ -451,9 +465,12 @@ window.addEventListener('storage', e => { if (e.key === SESSION_KEY) watchSessio
     return;
   }
   try {
-    await Auth.init();
+    await Promise.all([
+      Auth.init(),
+      Pricing.load(),   // never rejects: falls back to built-in rates and reports it
+    ]);
   } catch (e) {
-    console.error('[boot] auth init failed', e);
+    console.error('[boot] startup failed', e);
   }
   $('#boot').hidden = true;
   $('#root').hidden = false;

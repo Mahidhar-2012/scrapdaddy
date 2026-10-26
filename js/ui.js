@@ -202,20 +202,21 @@ const NAV = {
     { href: '#/household', icon: '📊', label: 'Overview' },
     { href: '#/household/sell', icon: '📸', label: 'Sell scrap' },
     { href: '#/household/listings', icon: '📋', label: 'My listings', count: u => DB.listings.filter(l => l.owner === u.id).length },
-    { href: '#/rates', icon: '💹', label: 'Scrap rates' },
+    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
   ],
   vendor: [
     { href: '#/vendor', icon: '📊', label: 'Overview' },
     { href: '#/vendor/find', icon: '🔍', label: 'Jobs board', count: () => DB.listings.filter(l => l.stage === 0).length },
     { href: '#/vendor/pickups', icon: '🛺', label: 'My pickups', count: u => { const v = vendorForUser(u.id); return v ? DB.listings.filter(l => l.vendor === v.id && l.stage >= 1 && l.stage <= 3).length : 0; } },
     { href: '#/vendor/hub', icon: '🏗️', label: 'Hub inventory' },
-    { href: '#/rates', icon: '💹', label: 'Scrap rates' },
+    { href: '#/vendor/plan', icon: '💳', label: 'Plan & billing' },
+    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
   ],
   factory: [
     { href: '#/factory', icon: '📊', label: 'Overview' },
     { href: '#/factory/market', icon: '🏭', label: 'Marketplace' },
     { href: '#/factory/orders', icon: '📦', label: 'Orders', count: u => DB.orders.filter(o => o.buyerId === u.id).length },
-    { href: '#/rates', icon: '💹', label: 'Scrap rates' },
+    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
   ],
   admin: [
     { href: '#/admin', icon: '📊', label: 'Overview' },
@@ -258,7 +259,7 @@ function renderShell(route) {
   $('#topbar').innerHTML =
     `<button class="btn btn-ghost btn-icon burger" data-act="toggleNav" aria-label="Open navigation" aria-expanded="false">☰</button>
      <div class="grow"><h1>${esc(route.title || meta.label)}</h1>${route.subtitle ? `<div class="sub">${esc(route.subtitle)}</div>` : ''}</div>
-     <a class="btn btn-2 btn-sm" href="#/rates">💹 Rates</a>`;
+     <a class="btn btn-2 btn-sm" href="#/rates">💹 Prices</a>`;
 }
 
 function renderDemoBanner() {
