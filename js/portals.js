@@ -1102,7 +1102,7 @@ function readPhoto(file) {
       c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       View.form.photo = c.toDataURL('image/jpeg', 0.78);
-      View.scanResult = null; View.sampleIdx = null;
+      View.scanReport = null; View.scanError = null; View.scanModel = null;
       redrawSell();
       toast('Photo added');
     };

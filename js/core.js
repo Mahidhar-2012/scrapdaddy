@@ -76,19 +76,6 @@ const PIECE_KG = { ac: 38, fridge: 45 };
 const STAGES = ['Listed', 'Pickup scheduled', 'Weighed on scale', 'At hub', 'Sold to factory'];
 const SLOTS = ['Tomorrow, 10am–1pm', 'Tomorrow, 2pm–6pm', 'Saturday, 10am–1pm', 'Sunday, 10am–1pm'];
 
-/* Demo-only presets used by the simulated photo scan (replaced in Phase 2). */
-const SCAN_PRESETS = [
-  { cat: 'metals',   rk: 'copper',    title: 'Copper coil wiring',             kg: 12 },
-  { cat: 'metals',   rk: 'brass',     title: 'Brass plumbing fittings',        kg: 9 },
-  { cat: 'metals',   rk: 'aluminium', title: 'Aluminium utensils and frames',  kg: 16 },
-  { cat: 'metals',   rk: 'iron',      title: 'Mixed mild steel',               kg: 30 },
-  { cat: 'plastics', rk: 'plastic',   title: 'Mixed PET plastic bottles',      kg: 20 },
-  { cat: 'paper',    rk: 'paper',     title: 'Bundled old newspapers',         kg: 25 },
-  { cat: 'paper',    rk: 'cardboard', title: 'Corrugated cardboard boxes',     kg: 22 },
-  { cat: 'ewaste',   rk: 'ac',        title: 'Split AC, copper coil 1.5 ton',  kg: 1 },
-  { cat: 'ewaste',   rk: 'fridge',    title: 'End-of-life refrigerator',       kg: 1 },
-];
-
 /* ---------- placeholder imagery (inline SVG, no network) ---------- */
 function svgPhoto(emoji, c1, c2) {
   const s = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300">` +
