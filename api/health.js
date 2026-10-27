@@ -30,7 +30,10 @@ async function probeOpenAI(key, model) {
     }, 8000);
     if (res.status === 404) return { reachable: true, modelAvailable: false, reason: 'Model not found for this key' };
     if (!res.ok) return { reachable: false, reason: 'OpenAI returned ' + res.status };
-    return { reachable: true, modelAvailable: true };
+    // Listing a model costs nothing and succeeds even on an account with no
+    // credit, so this cannot tell us whether a real call will be paid for.
+    return { reachable: true, modelAvailable: true,
+             note: 'Key and model are valid. This check does not verify billing credit — a scan can still fail with "no credit".' };
   } catch (e) {
     return { reachable: false, reason: e.name === 'AbortError' ? 'OpenAI timed out' : 'Could not reach OpenAI' };
   }

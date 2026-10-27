@@ -91,13 +91,51 @@ async function fetchWithTimeout(url, options, ms) {
   }
 }
 
-/** Turns an upstream failure into a message safe to show a user. */
-function upstreamMessage(status, provider) {
+/**
+ * Turns an upstream failure into a message safe to show a user.
+ * `body` is the raw error text, used to tell apart failures that share a
+ * status code — notably "out of credit" and "too many requests", which both
+ * come back as 429 but need completely different action from the operator.
+ */
+function upstreamMessage(status, provider, body) {
+  let code = '', message = '';
+  if (body) {
+    try {
+      const parsed = JSON.parse(body);
+      const err = parsed.error || parsed;
+      code = String(err.code || err.type || '');
+      message = String(err.message || '');
+    } catch {
+      code = ''; message = String(body).slice(0, 200);
+    }
+  }
+  const hay = (code + ' ' + message).toLowerCase();
+
+  if (status === 429 && /insufficient_quota|exceeded your current quota|billing|credit|payment/.test(hay)) {
+    return `The ${provider} account has no credit left. Add funds to the ${provider} billing page, then try again.`;
+  }
   if (status === 401 || status === 403) return `The ${provider} API key was rejected. Check the key in your environment settings.`;
   if (status === 429) return `${provider} is rate limiting us. Please try again in a moment.`;
-  if (status === 404) return `The configured ${provider} model was not found. Check the model name in your environment settings.`;
+  if (status === 404 || /model_not_found|does not exist/.test(hay)) {
+    return `The configured ${provider} model was not found. Check the model name in your environment settings.`;
+  }
+  if (status === 400 && /image|invalid_image|unsupported/.test(hay)) {
+    return `${provider} could not read that image. Try a different photo.`;
+  }
   if (status >= 500) return `${provider} is having trouble right now. Please try again shortly.`;
   return `The request to ${provider} failed.`;
 }
 
-module.exports = { handler, send, fail, readJson, readRaw, clientIp, fetchWithTimeout, upstreamMessage, applyCors };
+/** A short machine-readable reason, for the client to branch on. */
+function upstreamCode(status, body) {
+  let hay = '';
+  try { const p = JSON.parse(body || '{}'); const e = p.error || p; hay = ((e.code || e.type || '') + ' ' + (e.message || '')).toLowerCase(); }
+  catch { hay = String(body || '').toLowerCase(); }
+  if (status === 429 && /insufficient_quota|quota|billing|credit|payment/.test(hay)) return 'no_credit';
+  if (status === 429) return 'rate_limited';
+  if (status === 401 || status === 403) return 'bad_key';
+  if (status === 404 || /model_not_found/.test(hay)) return 'bad_model';
+  return 'upstream_' + status;
+}
+
+module.exports = { handler, send, fail, readJson, readRaw, clientIp, fetchWithTimeout, upstreamMessage, upstreamCode, applyCors };

@@ -6,7 +6,7 @@
 'use strict';
 
 const { config } = require('./_lib/config');
-const { handler, send, fail, readJson, clientIp, fetchWithTimeout, upstreamMessage } = require('./_lib/http');
+const { handler, send, fail, readJson, clientIp, fetchWithTimeout, upstreamMessage, upstreamCode } = require('./_lib/http');
 const { take } = require('./_lib/ratelimit');
 
 const MAX_TURNS = 16;
@@ -93,7 +93,8 @@ module.exports = handler(['POST'], async (req, res) => {
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => '');
     console.error('[chat] groq', upstream.status, detail.slice(0, 400));
-    return fail(res, upstream.status === 429 ? 429 : 502, upstreamMessage(upstream.status, 'Groq'), { code: 'upstream_' + upstream.status });
+    const code = upstreamCode(upstream.status, detail);
+    return fail(res, upstream.status === 429 ? 429 : 502, upstreamMessage(upstream.status, 'Groq', detail), { code });
   }
 
   let data;
