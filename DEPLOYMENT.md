@@ -91,12 +91,19 @@ and can be overridden without touching code:
 
 | Variable | Default | Alternatives |
 |---|---|---|
-| `VISION_PROVIDER` | `openai` | `gemini` |
+| `VISION_PROVIDER` | `groq` | `gemini`, `openai` |
+| `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | `meta-models/muse-spark-open` (limited preview) |
 | `GEMINI_VISION_MODEL` | `gemini-3.8-flash` | any multimodal Gemini model |
 | `OPENAI_VISION_MODEL` | `gpt-6.1-sol` | `gpt-6-astra` (most capable), `gpt-6-luna` (cheapest) |
 | `GROQ_CHAT_MODEL` | `openai/gpt-oss-20b` | `openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant` |
 
 ### Choosing a vision provider
+
+**Groq** (the default) needs no extra key: `GROQ_API_KEY` already powers the
+assistant, and `qwen/qwen3.8-27b` accepts images, so one free key covers both
+features. Groq documents JSON mode rather than JSON-schema mode for vision, so
+the field list is given in the prompt and the reply is validated server-side —
+the same validation every provider's reply goes through.
 
 **Gemini** (`VISION_PROVIDER=gemini`, `GEMINI_API_KEY`) has a free tier and
 needs no card — get a key at https://aistudio.google.com/apikey. Two things to

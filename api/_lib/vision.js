@@ -91,10 +91,52 @@ function extractGeminiText(data) {
   return null;
 }
 
+/* ---------- Groq: OpenAI-compatible chat completions, image as a data URL ----
+   Groq documents JSON mode (response_format {type:'json_object'}) for its
+   vision model but not json_schema, so the shape is described in the prompt
+   and enforced by validateReport() on the way back, exactly as for the others. */
+async function groqAnalyse({ dataUrl, prompt, schema, maxTokens }, key) {
+  const res = await fetchWithTimeout(config.vision.endpoint(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+    body: JSON.stringify({
+      model: config.vision.model(),
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt + '\n\n' + schemaInstructions(schema) },
+          { type: 'image_url', image_url: { url: dataUrl } },
+        ],
+      }],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+      max_tokens: maxTokens,
+    }),
+  });
+  if (!res.ok) return { ok: false, status: res.status, body: await res.text().catch(() => '') };
+  const data = await res.json();
+  const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  return { ok: true, text: text || null, model: data.model || config.vision.model(),
+           usage: data.usage ? { inputTokens: data.usage.prompt_tokens, outputTokens: data.usage.completion_tokens } : null };
+}
+
+/** Renders a schema as plain instructions, for providers without schema mode. */
+function schemaInstructions(schema) {
+  const lines = Object.keys(schema.properties).map(k => {
+    const p = schema.properties[k];
+    const type = Array.isArray(p.type) ? p.type.filter(x => x !== 'null').join('|') : p.type;
+    const enums = p.enum ? ' one of: ' + p.enum.join(', ') : '';
+    const items = p.type === 'array' ? ' (array of strings)' : '';
+    return `- "${k}" (${type})${items}${enums}${p.description ? ' — ' + p.description : ''}`;
+  });
+  return 'Reply with JSON only. No prose, no code fence. Use exactly these keys:\n' + lines.join('\n') +
+         '\nEvery key must be present. Use an empty string or an empty array where you have nothing to say.';
+}
+
 /* ---------- provider-appropriate schema ---------- */
 function schemaFor(provider, base) {
-  if (provider !== 'gemini') return base;
-  // Gemini rejects additionalProperties and ["string","null"] unions, so flatten
+  if (provider === 'openai') return base;
+  // Neither Gemini nor Groq takes OpenAI's strict dialect, so flatten
   // nullable fields to plain strings. validateReport() already treats an empty
   // string as "none", so the result is identical.
   const props = {};
@@ -112,7 +154,9 @@ async function analyse(args) {
   if (!key.ok) return { ok: false, status: 0, notConfigured: true, body: key.reason };
   const provider = config.vision.provider();
   const payload = Object.assign({}, args, { schema: schemaFor(provider, args.schema) });
-  return provider === 'gemini' ? geminiAnalyse(payload, key.value) : openaiAnalyse(payload, key.value);
+  if (provider === 'gemini') return geminiAnalyse(payload, key.value);
+  if (provider === 'openai') return openaiAnalyse(payload, key.value);
+  return groqAnalyse(payload, key.value);
 }
 
 module.exports = { analyse, schemaFor };

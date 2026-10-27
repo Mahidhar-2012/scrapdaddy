@@ -16,34 +16,41 @@ const config = {
        Gemini has a free tier and needs no card; OpenAI bills per request. */
     provider: () => {
       // trim: a value pasted into a dashboard can carry stray whitespace or quotes
-      const raw = String(process.env.VISION_PROVIDER || 'openai').trim().replace(/^["']|["']$/g, '').toLowerCase();
-      return raw === 'gemini' || raw === 'google' ? 'gemini' : 'openai';
+      const raw = String(process.env.VISION_PROVIDER || 'groq').trim().replace(/^["']|["']$/g, '').toLowerCase();
+      if (raw === 'gemini' || raw === 'google') return 'gemini';
+      if (raw === 'openai') return 'openai';
+      return 'groq';
     },
     key() {
-      return this.provider() === 'gemini' ? readSecret('GEMINI_API_KEY') : readSecret('OPENAI_API_KEY');
+      const p = this.provider();
+      if (p === 'gemini') return readSecret('GEMINI_API_KEY');
+      if (p === 'openai') return readSecret('OPENAI_API_KEY');
+      return readSecret('GROQ_API_KEY');   // the assistant's key does vision too
     },
     model() {
-      if (this.provider() === 'gemini') {
-        // Multimodal Gemini model. Override with GEMINI_VISION_MODEL.
-        return process.env.GEMINI_VISION_MODEL || 'gemini-3.8-flash';
-      }
-      // OpenAI models that accept image input: gpt-6-luna (cheapest),
-      // gpt-6.1-sol (balanced), gpt-6-astra (most capable).
-      return process.env.OPENAI_VISION_MODEL || 'gpt-6.1-sol';
+      const p = this.provider();
+      if (p === 'gemini') return process.env.GEMINI_VISION_MODEL || 'gemini-3.8-flash';
+      if (p === 'openai') return process.env.OPENAI_VISION_MODEL || 'gpt-6.1-sol';
+      // Groq's vision-capable model. meta-models/muse-spark-open is the other,
+      // but it is limited preview and needs Groq to grant access.
+      return process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b';
     },
     endpoint() {
-      if (this.provider() === 'gemini') {
-        return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/interactions';
-      }
-      return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/responses';
+      const p = this.provider();
+      if (p === 'gemini') return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/interactions';
+      if (p === 'openai') return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/responses';
+      return (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions';
     },
     listEndpoint() {
-      if (this.provider() === 'gemini') {
-        return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/models';
-      }
-      return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/models';
+      const p = this.provider();
+      if (p === 'gemini') return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/models';
+      if (p === 'openai') return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/models';
+      return (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/models';
     },
-    label() { return this.provider() === 'gemini' ? 'Gemini' : 'OpenAI'; },
+    label() {
+      const p = this.provider();
+      return p === 'gemini' ? 'Gemini' : p === 'openai' ? 'OpenAI' : 'Groq';
+    },
   },
   chat: {
     provider: 'groq',

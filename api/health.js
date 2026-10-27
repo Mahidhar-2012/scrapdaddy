@@ -59,8 +59,19 @@ async function probeGemini(key, model) {
   }
 }
 
-const probeVision = (key, model) =>
-  config.vision.provider() === 'gemini' ? probeGemini(key, model) : probeOpenAI(key, model);
+async function probeGroqModel(key, model) {
+  const r = await probeGroq(key, model);           // same /models list as the chat probe
+  if (r.reachable && r.modelAvailable === false) {
+    return Object.assign({}, r, { reason: 'Key works, but "' + model + '" is not available to it' });
+  }
+  return r;
+}
+function probeVision(key, model) {
+  const p = config.vision.provider();
+  if (p === 'gemini') return probeGemini(key, model);
+  if (p === 'openai') return probeOpenAI(key, model);
+  return probeGroqModel(key, model);
+}
 
 module.exports = handler(['GET'], async (req, res) => {
   const visionKey = config.vision.key();
@@ -108,6 +119,8 @@ module.exports = handler(['GET'], async (req, res) => {
       VISION_PROVIDER: process.env.VISION_PROVIDER === undefined ? '(not set)' : JSON.stringify(process.env.VISION_PROVIDER),
       resolvedVisionProvider: config.vision.provider(),
       GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'set' : '(not set)',
+      visionKeyVariable: config.vision.provider() === 'gemini' ? 'GEMINI_API_KEY'
+        : config.vision.provider() === 'openai' ? 'OPENAI_API_KEY' : 'GROQ_API_KEY',
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : '(not set)',
       GROQ_API_KEY: process.env.GROQ_API_KEY ? 'set' : '(not set)',
     },
