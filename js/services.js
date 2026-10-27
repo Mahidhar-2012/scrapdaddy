@@ -90,6 +90,19 @@ const Api = {
   async chatReady() { const h = await this.health(); return !!(h.ok && h.providers.chat.configured); },
 };
 
+/**
+ * Operator problems (no credit, bad key, bad model) are the administrator's
+ * business, not a household seller's. Administrators see the real cause;
+ * everyone else is told plainly that the feature is unavailable right now.
+ */
+const OPERATOR_CODES = ['no_credit', 'bad_key', 'bad_model', 'not_configured'];
+function userFacingError(error, code, feature) {
+  if (OPERATOR_CODES.indexOf(code) < 0) return error;
+  const isAdmin = typeof Auth !== 'undefined' && Auth.role && Auth.role() === 'admin';
+  if (isAdmin) return error;
+  return `${feature} is unavailable at the moment. Please carry on without it — you can fill the details in yourself.`;
+}
+
 /* ---------------------------------------------------------------------------
    Scanner — sends one photo for analysis and returns a structured report.
    The server validates the model's JSON against a schema before replying, so
@@ -119,7 +132,7 @@ const Scanner = {
       locality: (hints && hints.locality) || null,
       materials: RATE_DEFS.map(r => r.key),
     });
-    if (!res.ok) return { ok: false, error: res.error, status: res.status };
+    if (!res.ok) return { ok: false, error: res.error, code: res.data && res.data.code, status: res.status };
     return { ok: true, report: res.data.report, usage: res.data.usage || null, model: res.data.model || null };
   },
 };
@@ -131,7 +144,7 @@ const Scanner = {
 const Assistant = {
   async ask(messages, context) {
     const res = await Api.post('chat', { messages, context });
-    if (!res.ok) return { ok: false, error: res.error, status: res.status };
+    if (!res.ok) return { ok: false, error: res.error, code: res.data && res.data.code, status: res.status };
     return { ok: true, reply: res.data.reply, model: res.data.model || null };
   },
 

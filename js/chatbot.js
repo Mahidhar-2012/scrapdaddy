@@ -148,7 +148,8 @@ const Chat = {
     this.busy = false;
 
     if (!res.ok) {
-      this.messages.push({ role: 'assistant', content: res.error || 'Something went wrong. Please try again.', error: true });
+      const msg = userFacingError(res.error || 'Something went wrong. Please try again.', res.code, 'The assistant');
+      this.messages.push({ role: 'assistant', content: msg, error: true });
       this.render();
       return;
     }

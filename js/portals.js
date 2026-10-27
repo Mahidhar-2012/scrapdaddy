@@ -306,8 +306,11 @@ A.scan = async () => {
   View.scanBusy = false;
 
   if (!res.ok) {
-    View.scanError = res.error;
-    if (res.status === 503) { View.scanReady = false; View.scanReason = res.error; }
+    View.scanError = userFacingError(res.error, res.code, 'Photo analysis');
+    if (res.status === 503 || res.code === 'no_credit' || res.code === 'bad_key') {
+      View.scanReady = false;
+      View.scanReason = userFacingError(res.error, res.code, 'Photo analysis');
+    }
     redrawSell();
     toast('The photo could not be analysed', 'err');
     return;
