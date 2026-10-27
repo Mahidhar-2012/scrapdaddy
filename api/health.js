@@ -24,8 +24,7 @@ async function probeGroq(key, model) {
 
 async function probeOpenAI(key, model) {
   try {
-    const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1');
-    const res = await fetchWithTimeout(base + '/models/' + encodeURIComponent(model), {
+    const res = await fetchWithTimeout(config.vision.listEndpoint() + '/' + encodeURIComponent(model), {
       headers: { Authorization: 'Bearer ' + key },
     }, 8000);
     if (res.status === 404) return { reachable: true, modelAvailable: false, reason: 'Model not found for this key' };
@@ -39,6 +38,30 @@ async function probeOpenAI(key, model) {
   }
 }
 
+async function probeGemini(key, model) {
+  try {
+    const res = await fetchWithTimeout(config.vision.listEndpoint(), {
+      headers: { 'x-goog-api-key': key },
+    }, 8000);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      if (res.status === 400 || res.status === 403) return { reachable: true, modelAvailable: null, reason: 'Gemini rejected the key (' + res.status + ')' };
+      return { reachable: false, reason: 'Gemini returned ' + res.status + (body ? ': ' + body.slice(0, 120) : '') };
+    }
+    const body = await res.json();
+    const ids = (body.models || body.data || [])
+      .map(m => String(m.name || m.id || '').replace(/^models\//, ''))
+      .filter(Boolean);
+    if (!ids.length) return { reachable: true, modelAvailable: null, reason: 'Key works; the model list came back empty' };
+    return { reachable: true, modelAvailable: ids.indexOf(model) >= 0, availableModels: ids.slice(0, 40) };
+  } catch (e) {
+    return { reachable: false, reason: e.name === 'AbortError' ? 'Gemini timed out' : 'Could not reach Gemini' };
+  }
+}
+
+const probeVision = (key, model) =>
+  config.vision.provider() === 'gemini' ? probeGemini(key, model) : probeOpenAI(key, model);
+
 module.exports = handler(['GET'], async (req, res) => {
   const visionKey = config.vision.key();
   const chatKey = config.chat.key();
@@ -48,7 +71,7 @@ module.exports = handler(['GET'], async (req, res) => {
 
   const providers = {
     vision: {
-      configured: visionKey.ok, provider: 'openai', model: config.vision.model(),
+      configured: visionKey.ok, provider: config.vision.provider(), model: config.vision.model(),
       reason: visionKey.reason,
     },
     chat: {
@@ -69,7 +92,7 @@ module.exports = handler(['GET'], async (req, res) => {
   if (url.searchParams.get('probe') === '1') {
     const [g, o] = await Promise.all([
       chatKey.ok ? probeGroq(chatKey.value, config.chat.model()) : Promise.resolve({ reachable: false, reason: chatKey.reason }),
-      visionKey.ok ? probeOpenAI(visionKey.value, config.vision.model()) : Promise.resolve({ reachable: false, reason: visionKey.reason }),
+      visionKey.ok ? probeVision(visionKey.value, config.vision.model()) : Promise.resolve({ reachable: false, reason: visionKey.reason }),
     ]);
     providers.chat.probe = g;
     providers.vision.probe = o;

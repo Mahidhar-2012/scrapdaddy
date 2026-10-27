@@ -22,8 +22,9 @@ Your current URL stays the same. Only the `api/` folder goes somewhere else.
    - It will serve the whole repo; you will use only its `/api` routes.
 2. **Add the keys** — Project → Settings → Environment Variables. Copy the
    names from [`.env.example`](.env.example). At minimum:
-   - `OPENAI_API_KEY` — photo analysis
    - `GROQ_API_KEY` — assistant
+   - `VISION_PROVIDER` plus that provider's key — photo analysis
+     (`gemini` + `GEMINI_API_KEY`, or `openai` + `OPENAI_API_KEY`)
    - `ALLOWED_ORIGINS` — set to `https://mahidhar-2012.github.io`
 3. **Redeploy** so the variables take effect.
 4. **Point the app at it** — open ScrapDaddy, sign in as an administrator, go to
@@ -90,8 +91,22 @@ and can be overridden without touching code:
 
 | Variable | Default | Alternatives |
 |---|---|---|
+| `VISION_PROVIDER` | `openai` | `gemini` |
+| `GEMINI_VISION_MODEL` | `gemini-3.8-flash` | any multimodal Gemini model |
 | `OPENAI_VISION_MODEL` | `gpt-6.1-sol` | `gpt-6-astra` (most capable), `gpt-6-luna` (cheapest) |
 | `GROQ_CHAT_MODEL` | `openai/gpt-oss-20b` | `openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant` |
+
+### Choosing a vision provider
+
+**Gemini** (`VISION_PROVIDER=gemini`, `GEMINI_API_KEY`) has a free tier and
+needs no card — get a key at https://aistudio.google.com/apikey. Two things to
+know: the free allowance is per project and is shown at
+https://aistudio.google.com/rate-limit, and on the free tier Google may use
+submitted content to improve their models. Since these are photos from your
+users, say so in your privacy notice, or enable billing to opt out.
+
+**OpenAI** (`VISION_PROVIDER=openai`, `OPENAI_API_KEY`) bills per request and
+needs credit on the account. A ChatGPT subscription does not fund it.
 
 `GET /api/health?probe=1` lists what your key can actually reach, and the
 Integrations panel shows the same thing. If a model has been retired, that is

@@ -12,12 +12,34 @@ function readSecret(name) {
 
 const config = {
   vision: {
-    provider: 'openai',
-    key: () => readSecret('OPENAI_API_KEY'),
-    // Current OpenAI models that accept image input. Override with OPENAI_VISION_MODEL.
-    // gpt-6-luna is the cheapest; gpt-6-astra is the most capable.
-    model: () => process.env.OPENAI_VISION_MODEL || 'gpt-6.1-sol',
-    endpoint: () => (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/responses',
+    /* VISION_PROVIDER picks who analyses photos: 'openai' or 'gemini'.
+       Gemini has a free tier and needs no card; OpenAI bills per request. */
+    provider: () => (process.env.VISION_PROVIDER || 'openai').toLowerCase() === 'gemini' ? 'gemini' : 'openai',
+    key() {
+      return this.provider() === 'gemini' ? readSecret('GEMINI_API_KEY') : readSecret('OPENAI_API_KEY');
+    },
+    model() {
+      if (this.provider() === 'gemini') {
+        // Multimodal Gemini model. Override with GEMINI_VISION_MODEL.
+        return process.env.GEMINI_VISION_MODEL || 'gemini-3.8-flash';
+      }
+      // OpenAI models that accept image input: gpt-6-luna (cheapest),
+      // gpt-6.1-sol (balanced), gpt-6-astra (most capable).
+      return process.env.OPENAI_VISION_MODEL || 'gpt-6.1-sol';
+    },
+    endpoint() {
+      if (this.provider() === 'gemini') {
+        return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/interactions';
+      }
+      return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/responses';
+    },
+    listEndpoint() {
+      if (this.provider() === 'gemini') {
+        return (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta') + '/models';
+      }
+      return (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1') + '/models';
+    },
+    label() { return this.provider() === 'gemini' ? 'Gemini' : 'OpenAI'; },
   },
   chat: {
     provider: 'groq',

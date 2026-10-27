@@ -8,6 +8,7 @@ const { config } = require('./_lib/config');
 const { handler, send, fail, readJson, clientIp, fetchWithTimeout, upstreamMessage, upstreamCode } = require('./_lib/http');
 const { take } = require('./_lib/ratelimit');
 const { scanSchema, buildPrompt, validateReport } = require('./_lib/scanSchema');
+const { analyse } = require('./_lib/vision');
 
 const DATA_URL = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/;
 
@@ -44,55 +45,42 @@ module.exports = handler(['POST'], async (req, res) => {
   const weight = Number(body.knownWeightKg) > 0 ? Number(body.knownWeightKg) : null;
   const locality = typeof body.locality === 'string' ? body.locality.slice(0, 120) : null;
 
-  const payload = {
-    model: config.vision.model(),
-    input: [{
-      role: 'user',
-      content: [
-        { type: 'input_text', text: buildPrompt(materials, weight, locality) },
-        { type: 'input_image', image_url: image, detail: 'auto' },
-      ],
-    }],
-    text: {
-      format: { type: 'json_schema', name: 'scrap_assessment', schema: scanSchema, strict: true },
-    },
-    max_output_tokens: 900,
-  };
+  const result = await analyse({
+    dataUrl: image,
+    mime: m[1],
+    base64: m[2].replace(/\s/g, ''),
+    prompt: buildPrompt(materials, weight, locality),
+    schema: scanSchema,
+    maxTokens: 900,
+  }).catch(e => ({ ok: false, status: 0, thrown: e }));
 
-  let upstream;
-  try {
-    upstream = await fetchWithTimeout(config.vision.endpoint(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key.value },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) {
-    console.error('[scan] upstream error:', e && e.name);
-    return fail(res, 504, e.name === 'AbortError'
-      ? 'The analysis took too long. Please try again with a smaller photo.'
-      : 'Could not reach the image analysis service.');
+  const label = config.vision.label();
+
+  if (!result.ok) {
+    if (result.thrown) {
+      console.error('[scan] ' + label + ' transport error:', result.thrown && result.thrown.name);
+      return fail(res, 504, result.thrown.name === 'AbortError'
+        ? 'The analysis took too long. Please try again with a smaller photo.'
+        : 'Could not reach the image analysis service.');
+    }
+    console.error('[scan] ' + label, result.status, String(result.body || '').slice(0, 400));
+    const code = upstreamCode(result.status, result.body);
+    return fail(res, result.status === 429 ? 429 : 502, upstreamMessage(result.status, label, result.body), { code });
   }
 
-  if (!upstream.ok) {
-    const detail = await upstream.text().catch(() => '');
-    console.error('[scan] openai', upstream.status, detail.slice(0, 400));
-    const code = upstreamCode(upstream.status, detail);
-    return fail(res, upstream.status === 429 ? 429 : 502, upstreamMessage(upstream.status, 'OpenAI', detail), { code });
-  }
-
-  let data;
-  try { data = await upstream.json(); }
-  catch { return fail(res, 502, 'The analysis service sent a reply we could not read.'); }
-
-  const text = extractText(data);
-  if (!text) {
-    console.error('[scan] no text in response');
+  if (!result.text) {
+    console.error('[scan] ' + label + ' returned no text');
     return fail(res, 502, 'The analysis came back empty. Please try another photo.');
   }
 
   let parsed;
-  try { parsed = JSON.parse(text); }
-  catch { return fail(res, 502, 'The analysis was not in the expected format. Please try again.'); }
+  try { parsed = JSON.parse(result.text); }
+  catch {
+    // some models wrap JSON in a code fence
+    const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(result.text);
+    try { parsed = JSON.parse(fenced ? fenced[1] : result.text); }
+    catch { return fail(res, 502, 'The analysis was not in the expected format. Please try again.'); }
+  }
 
   parsed.__weightSupplied = !!weight;
   const checked = validateReport(parsed);
@@ -100,25 +88,9 @@ module.exports = handler(['POST'], async (req, res) => {
 
   send(res, 200, {
     report: checked.report,
-    model: data.model || config.vision.model(),
-    usage: data.usage ? { inputTokens: data.usage.input_tokens, outputTokens: data.usage.output_tokens } : null,
+    provider: config.vision.provider(),
+    model: result.model,
+    usage: result.usage,
     scansLeftThisHour: limit.remaining,
   });
 });
-
-/** Pulls the assistant text out of a Responses API payload. */
-function extractText(data) {
-  if (typeof data.output_text === 'string' && data.output_text.trim()) return data.output_text;
-  if (Array.isArray(data.output)) {
-    for (const item of data.output) {
-      if (!item || !Array.isArray(item.content)) continue;
-      for (const part of item.content) {
-        if (part && typeof part.text === 'string' && part.text.trim()) return part.text;
-      }
-    }
-  }
-  if (Array.isArray(data.content)) {
-    for (const part of data.content) if (part && typeof part.text === 'string') return part.text;
-  }
-  return null;
-}

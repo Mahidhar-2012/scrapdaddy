@@ -98,23 +98,19 @@ async function fetchWithTimeout(url, options, ms) {
  * come back as 429 but need completely different action from the operator.
  */
 function upstreamMessage(status, provider, body) {
-  let code = '', message = '';
-  if (body) {
-    try {
-      const parsed = JSON.parse(body);
-      const err = parsed.error || parsed;
-      code = String(err.code || err.type || '');
-      message = String(err.message || '');
-    } catch {
-      code = ''; message = String(body).slice(0, 200);
-    }
-  }
-  const hay = (code + ' ' + message).toLowerCase();
+  const hay = errorHaystack(body);
 
-  if (status === 429 && /insufficient_quota|exceeded your current quota|billing|credit|payment/.test(hay)) {
+  if (/insufficient_quota|exceeded your current quota|billing|credit|payment required/.test(hay)) {
     return `The ${provider} account has no credit left. Add funds to the ${provider} billing page, then try again.`;
   }
-  if (status === 401 || status === 403) return `The ${provider} API key was rejected. Check the key in your environment settings.`;
+  // Gemini reports a bad key as 400 INVALID_ARGUMENT / API_KEY_INVALID
+  if (status === 401 || status === 403 || /api_key_invalid|api key not valid/.test(hay)) {
+    return `The ${provider} API key was rejected. Check the key in your environment settings.`;
+  }
+  // Gemini free-tier caps arrive as RESOURCE_EXHAUSTED and are not a billing problem
+  if (/resource_exhausted|rate.?limit|too many requests/.test(hay)) {
+    return `${provider} is rate limiting us, or the free-tier daily cap is used up. Please try again later.`;
+  }
   if (status === 429) return `${provider} is rate limiting us. Please try again in a moment.`;
   if (status === 404 || /model_not_found|does not exist/.test(hay)) {
     return `The configured ${provider} model was not found. Check the model name in your environment settings.`;
@@ -127,15 +123,32 @@ function upstreamMessage(status, provider, body) {
 }
 
 /** A short machine-readable reason, for the client to branch on. */
+/**
+ * Flattens a provider error body into one lowercase string to match against.
+ * Providers disagree on where the machine-readable reason lives: OpenAI uses
+ * error.code / error.type, Gemini uses error.status and error.details[].reason.
+ */
+function errorHaystack(body) {
+  if (!body) return '';
+  let parsed;
+  try { parsed = JSON.parse(body); } catch { return String(body).slice(0, 400).toLowerCase(); }
+  const e = (parsed && parsed.error) || parsed || {};
+  const bits = [e.code, e.type, e.status, e.message, e.reason];
+  if (Array.isArray(e.details)) {
+    e.details.forEach(d => { if (d && typeof d === 'object') bits.push(d.reason, d['@type'], d.message); });
+  }
+  return bits.filter(x => typeof x === 'string' || typeof x === 'number').join(' ').toLowerCase();
+}
+
 function upstreamCode(status, body) {
-  let hay = '';
-  try { const p = JSON.parse(body || '{}'); const e = p.error || p; hay = ((e.code || e.type || '') + ' ' + (e.message || '')).toLowerCase(); }
-  catch { hay = String(body || '').toLowerCase(); }
-  if (status === 429 && /insufficient_quota|quota|billing|credit|payment/.test(hay)) return 'no_credit';
-  if (status === 429) return 'rate_limited';
-  if (status === 401 || status === 403) return 'bad_key';
-  if (status === 404 || /model_not_found/.test(hay)) return 'bad_model';
+  const hay = errorHaystack(body);
+  // "quota" alone is ambiguous: Gemini's free-tier cap says RESOURCE_EXHAUSTED
+  // without any billing involved, so only billing words mean "no credit".
+  if (/insufficient_quota|exceeded your current quota|billing|credit|payment required/.test(hay)) return 'no_credit';
+  if (status === 401 || status === 403 || /api_key_invalid|api key not valid/.test(hay)) return 'bad_key';
+  if (status === 429 || /resource_exhausted|rate.?limit|too many requests/.test(hay)) return 'rate_limited';
+  if (status === 404 || /model_not_found|not found for api version|is not supported/.test(hay)) return 'bad_model';
   return 'upstream_' + status;
 }
 
-module.exports = { handler, send, fail, readJson, readRaw, clientIp, fetchWithTimeout, upstreamMessage, upstreamCode, applyCors };
+module.exports = { handler, send, fail, readJson, readRaw, clientIp, fetchWithTimeout, upstreamMessage, upstreamCode, errorHaystack, applyCors };
