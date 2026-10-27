@@ -14,7 +14,11 @@ const config = {
   vision: {
     /* VISION_PROVIDER picks who analyses photos: 'openai' or 'gemini'.
        Gemini has a free tier and needs no card; OpenAI bills per request. */
-    provider: () => (process.env.VISION_PROVIDER || 'openai').toLowerCase() === 'gemini' ? 'gemini' : 'openai',
+    provider: () => {
+      // trim: a value pasted into a dashboard can carry stray whitespace or quotes
+      const raw = String(process.env.VISION_PROVIDER || 'openai').trim().replace(/^["']|["']$/g, '').toLowerCase();
+      return raw === 'gemini' || raw === 'google' ? 'gemini' : 'openai';
+    },
     key() {
       return this.provider() === 'gemini' ? readSecret('GEMINI_API_KEY') : readSecret('OPENAI_API_KEY');
     },

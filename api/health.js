@@ -101,6 +101,16 @@ module.exports = handler(['GET'], async (req, res) => {
   send(res, 200, {
     service: 'scrapdaddy-api',
     time: new Date().toISOString(),
+    // Diagnostic: which variables the running function can see. Only presence
+    // is reported for secrets; VISION_PROVIDER is not a secret so it is echoed
+    // verbatim, which is what makes a typo or a stray space visible.
+    env: {
+      VISION_PROVIDER: process.env.VISION_PROVIDER === undefined ? '(not set)' : JSON.stringify(process.env.VISION_PROVIDER),
+      resolvedVisionProvider: config.vision.provider(),
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'set' : '(not set)',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : '(not set)',
+      GROQ_API_KEY: process.env.GROQ_API_KEY ? 'set' : '(not set)',
+    },
     rateLimits: { scanPerHour: config.limits.scanPerHour, chatPerHour: config.limits.chatPerHour },
     providers,
   });
