@@ -26,15 +26,16 @@
 const USERS_KEY = 'scrapdaddy.users.v1';
 const SESSION_KEY = 'scrapdaddy.session.v1';
 
-const ROLES = ['household', 'vendor', 'factory', 'admin'];
+const ROLES = ['household', 'vendor', 'factory', 'transporter', 'admin'];
 /* Roles a visitor may pick when creating their own account. 'admin' is absent
    by design: an administrator can only be created by another administrator. */
-const SIGNUP_ROLES = ['household', 'vendor', 'factory'];
+const SIGNUP_ROLES = ['household', 'vendor', 'factory', 'transporter'];
 
 const ROLE_META = {
   household: { label: 'Household',  icon: '🏡', home: '#/household', blurb: 'Sell scrap from your home or society.' },
   vendor:    { label: 'Vendor',     icon: '🛺', home: '#/vendor',    blurb: 'Collect, weigh and consolidate scrap.' },
   factory:   { label: 'Factory',    icon: '🏭', home: '#/factory',   blurb: 'Buy graded lots with GST paperwork.' },
+  transporter: { label: 'Transporter', icon: '🚚', home: '#/transport', blurb: 'Move lots from hubs to factories.' },
   admin:     { label: 'Administrator', icon: '🛡️', home: '#/admin',  blurb: 'Platform operations and oversight.' },
 };
 
@@ -309,6 +310,7 @@ const Auth = {
     if (!SIGNUP_ROLES.includes(data.role)) throw new AuthError('Choose a valid account type.', 'role');
     const user = await this.provider.createUser(Object.assign({}, data, { role: data.role }));
     if (user.role === 'vendor') this._ensureVendorRecord(user);
+    if (user.role === 'transporter') this._ensureTransporterRecord(user);
     this._start(user);
     return user;
   },
@@ -341,6 +343,18 @@ const Auth = {
     if (this.role() !== 'admin') throw new AuthError('Administrator access required.');
     if (userId === this._session.uid) throw new AuthError('You cannot suspend your own account.');
     return this.provider.updateUser(userId, { status });
+  },
+
+  /** A new transporter account gets a carrier record, pending admin approval. */
+  _ensureTransporterRecord(user) {
+    if (transporterForUser(user.id)) return transporterForUser(user.id);
+    const t = {
+      id: nextId('t'), userId: user.id, name: user.name, vehicle: 'e3w', capacityKg: vehicleCapacity('e3w'),
+      area: user.locality || '', pin: user.pin || '', verified: false, status: 'pending',
+      trips: 0, kgMoved: 0, joinedAt: Date.now(), sample: false,
+    };
+    DB.transporters.push(t); saveDB();
+    return t;
   },
 
   /** A new vendor account gets a collection record, pending admin approval. */

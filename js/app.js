@@ -151,11 +151,18 @@ const ROUTES = [
   { path: '#/factory',        roles: ['factory'], title: 'Overview',    subtitle: 'Supply and purchasing', render: viewFactoryOverview },
   { path: '#/factory/market', roles: ['factory'], title: 'Marketplace', subtitle: 'Graded lots and direct listings', render: viewFactoryMarket },
   { path: '#/factory/orders', roles: ['factory'], title: 'Orders',      subtitle: 'Your purchases and paperwork', render: viewFactoryOrders },
+  { path: '#/factory/sponsor', roles: ['factory'], title: 'Sponsor a transporter', subtitle: 'Back the carriers who move your lots', render: viewFactorySponsor },
+
+  { path: '#/transport',             roles: ['transporter'], title: 'Overview',     subtitle: 'Your runs and sponsorship', render: viewTransportOverview },
+  { path: '#/transport/jobs',        roles: ['transporter'], title: 'Delivery jobs', subtitle: 'Loads waiting for a carrier', render: viewTransportJobs },
+  { path: '#/transport/mine',        roles: ['transporter'], title: 'My runs',       subtitle: 'Collect and deliver', render: viewTransportMine },
+  { path: '#/transport/sponsorship', roles: ['transporter'], title: 'Sponsorship',   subtitle: 'Ask sponsors to fund your work', render: viewTransportSponsorship },
 
   { path: '#/admin',          roles: ['admin'], title: 'Platform overview', subtitle: 'Operations dashboard', render: viewAdminOverview },
   { path: '#/admin/ledger',   roles: ['admin'], title: 'Transactions',      subtitle: 'Every recorded movement', render: viewAdminLedger },
   { path: '#/admin/vendors',  roles: ['admin'], title: 'Vendors',           subtitle: 'Verification and approval', render: viewAdminVendors },
   { path: '#/admin/accounts', roles: ['admin'], title: 'Accounts',          subtitle: 'Roles and access', render: viewAdminAccounts },
+  { path: '#/admin/transport', roles: ['admin'], title: 'Transport & sponsorship', subtitle: 'Carriers, runs and funding', render: viewAdminTransport },
   { path: '#/admin/rates',    roles: ['admin'], title: 'Rates & compliance', subtitle: 'Reference prices and GST', render: viewAdminRates },
 
   { path: '#/rates',   roles: ROLES, title: 'Scrap prices', subtitle: 'Reference prices with their sources', render: viewPrices },
@@ -288,6 +295,8 @@ function currentFilters() {
   if (p === '#/vendor/find') return filtersFor('vendor');
   if (p === '#/factory/market') return filtersFor('factory', { src: 'hub' });
   if (p === '#/admin/ledger') return filtersFor('admin');
+  if (p === '#/transport/jobs') return filtersFor('transport');
+  if (p === '#/factory/sponsor') return filtersFor('sponsor');
   return null;
 }
 

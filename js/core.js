@@ -74,6 +74,47 @@ const MATERIALS = {
 };
 const PIECE_KG = { ac: 38, fridge: 45 };
 const STAGES = ['Listed', 'Pickup scheduled', 'Weighed on scale', 'At hub', 'Sold to factory'];
+
+/* ---------- transport ---------- */
+const DELIVERY_STAGES = ['Offered', 'Accepted', 'Collected from hub', 'Delivered to factory'];
+const DELIVERY_RATE_PER_TONNE = 900;   // indicative; shown to everyone, not a quote
+const DELIVERY_MIN_FEE = 450;
+const deliveryFee = kg => Math.max(DELIVERY_MIN_FEE, Math.round((Number(kg) || 0) / 1000 * DELIVERY_RATE_PER_TONNE));
+
+const VEHICLES = [
+  ['e3w',    'Electric three-wheeler', 500],
+  ['tempo',  'Tempo / mini truck',     1500],
+  ['truck6', 'Six-wheel truck',        9000],
+  ['truck10','Ten-wheel truck',        16000],
+];
+const vehicleLabel = id => (VEHICLES.find(v => v[0] === id) || [, 'Vehicle'])[1];
+const vehicleCapacity = id => (VEHICLES.find(v => v[0] === id) || [, , 1000])[2];
+
+/* Sponsorship lifecycle. A sponsorship is an agreement to fund a specific,
+   costed need. Money only ever moves through a verified payment, so a pledge
+   starts as a commitment and nothing else. */
+const SPONSOR_STATUS = {
+  in_review: { label: 'Awaiting review', tone: 'amber',  blurb: 'An administrator is checking this request.' },
+  open:      { label: 'Open for sponsors', tone: 'info', blurb: 'Sponsors can pledge support.' },
+  funded:    { label: 'Fully pledged', tone: 'brand',    blurb: 'The target is covered by pledges.' },
+  active:    { label: 'Active', tone: 'brand',           blurb: 'Funded and running.' },
+  completed: { label: 'Completed', tone: null,           blurb: 'The sponsorship period has ended.' },
+  declined:  { label: 'Declined', tone: 'danger',        blurb: 'Not approved for the marketplace.' },
+  cancelled: { label: 'Cancelled', tone: null,           blurb: 'Withdrawn by the transporter.' },
+};
+const PLEDGE_STATUS = {
+  pending_payment: { label: 'Awaiting payment', tone: 'amber' },
+  paid:            { label: 'Paid', tone: 'brand' },
+  withdrawn:       { label: 'Withdrawn', tone: null },
+};
+const SPONSOR_PURPOSES = [
+  ['vehicle',     'New or replacement vehicle'],
+  ['battery',     'EV battery replacement'],
+  ['maintenance', 'Servicing and maintenance'],
+  ['fuel',        'Running costs for a fixed period'],
+  ['insurance',   'Insurance and permits'],
+];
+const purposeLabel = id => (SPONSOR_PURPOSES.find(p => p[0] === id) || [, 'Other'])[1];
 const SLOTS = ['Tomorrow, 10am–1pm', 'Tomorrow, 2pm–6pm', 'Saturday, 10am–1pm', 'Sunday, 10am–1pm'];
 
 /* ---------- placeholder imagery (inline SVG, no network) ---------- */
@@ -173,6 +214,38 @@ function seedData() {
       { id: 'v3', name: 'Mohd Irfan',   hub: 'Hub 12 — Uppal',    userId: null, kycVerified: true, scaleVerified: false, status: 'pending' },
       { id: 'v4', name: 'Lakshmi Devi', hub: 'Hub 13 — LB Nagar', userId: null, kycVerified: false, scaleVerified: false, status: 'pending' },
     ],
+    transporters: [
+      { id: 't1', userId: null, name: 'Ravi Transport Co.', vehicle: 'tempo', capacityKg: 1500,
+        area: 'Kukatpally, Miyapur, Bachupally', pin: '500072', verified: true, status: 'approved',
+        trips: 38, kgMoved: 41200, joinedAt: Date.now() - 180 * 864e5, sample: true },
+      { id: 't2', userId: null, name: 'Sabiha Logistics', vehicle: 'e3w', capacityKg: 500,
+        area: 'Madhapur, Kondapur, Gachibowli', pin: '500081', verified: true, status: 'approved',
+        trips: 112, kgMoved: 48600, joinedAt: Date.now() - 300 * 864e5, sample: true },
+      { id: 't3', userId: null, name: 'Yadav Carriers', vehicle: 'truck6', capacityKg: 9000,
+        area: 'Uppal, Medchal, Secunderabad', pin: '500039', verified: false, status: 'pending',
+        trips: 0, kgMoved: 0, joinedAt: Date.now() - 6 * 864e5, sample: true },
+    ],
+    deliveries: [],
+    sponsorships: [
+      { id: 'S1', transporterId: 't2', title: 'Replacement battery pack for the e-rickshaw',
+        purpose: 'battery', amount: 62000, durationMonths: 0,
+        detail: 'The original pack now holds about half its range, which cuts the number of hub runs I can do in a day. A new LFP pack restores a full day of collection.',
+        benefits: ['Your name and logo on both sides of the vehicle for 12 months',
+                   'Monthly report of tonnage moved and CO₂ avoided',
+                   'First refusal on my capacity in Madhapur and Kondapur'],
+        status: 'open', createdAt: Date.now() - 9 * 864e5, reviewedAt: Date.now() - 8 * 864e5,
+        pledges: [], sample: true },
+      { id: 'S2', transporterId: 't1', title: 'Six months of running costs while routes build up',
+        purpose: 'fuel', amount: 48000, durationMonths: 6,
+        detail: 'Covering diesel and tolls for six months so I can commit to the Kukatpally hub run daily rather than only when a full load is ready.',
+        benefits: ['Branding on the tempo for the sponsored period',
+                   'Guaranteed next-day collection for the sponsor’s lots',
+                   'Quarterly impact summary'],
+        status: 'open', createdAt: Date.now() - 4 * 864e5, reviewedAt: Date.now() - 3 * 864e5,
+        pledges: [{ id: 'P1', sponsorId: null, sponsorName: 'GreenEarth Recyclers', amount: 18000,
+                    status: 'pending_payment', at: Date.now() - 2 * 864e5, paymentRef: null }],
+        sample: true },
+    ],
     seq: 100,
     seededAt: Date.now(),
   };
@@ -223,6 +296,7 @@ if (!DB) {
 /* forward-compatibility guards for partially written records */
 DB.rates = Object.assign(RATE_DEFS.reduce((m, r) => (m[r.key] = r.base, m), {}), DB.rates || {});
 DB.listings = DB.listings || []; DB.lots = DB.lots || []; DB.orders = DB.orders || []; DB.vendors = DB.vendors || [];
+DB.transporters = DB.transporters || []; DB.deliveries = DB.deliveries || []; DB.sponsorships = DB.sponsorships || [];
 DB.lots.forEach(l => { l.source = 'hub'; l.kind = 'lot'; });
 DB.listings.forEach(l => { l.kind = 'listing'; l.source = l.source || 'household'; });
 
@@ -237,6 +311,17 @@ const vendorById = id => DB.vendors.find(v => v.id === id) || null;
 const vendorName = id => (vendorById(id) || {}).name || 'Unassigned';
 const vendorForUser = userId => DB.vendors.find(v => v.userId === userId) || null;
 const listingById = id => DB.listings.find(l => l.id === id) || null;
+const transporterById = id => DB.transporters.find(t => t.id === id) || null;
+const transporterName = id => (transporterById(id) || {}).name || 'Unassigned';
+const transporterForUser = userId => DB.transporters.find(t => t.userId === userId) || null;
+const sponsorshipById = id => DB.sponsorships.find(s => s.id === id) || null;
+const deliveryById = id => DB.deliveries.find(d => d.id === id) || null;
+/** Pledges that actually count toward the target: paid, or awaiting payment. */
+const pledgedTotal = s => (s.pledges || [])
+  .filter(p => p.status === 'pending_payment' || p.status === 'paid')
+  .reduce((n, p) => n + (Number(p.amount) || 0), 0);
+const paidTotal = s => (s.pledges || [])
+  .filter(p => p.status === 'paid').reduce((n, p) => n + (Number(p.amount) || 0), 0);
 const lotById = id => DB.lots.find(l => l.id === id) || null;
 const itemById = (id, kind) => (kind === 'lot' ? lotById(id) : listingById(id));
 

@@ -177,6 +177,33 @@ const Assistant = {
     } else if (u.role === 'factory') {
       base.myOrders = DB.orders.filter(o => o.buyerId === u.id).length;
       base.lotsAvailable = DB.lots.filter(l => l.stage === 0).length;
+      let pledged = 0, n = 0;
+      DB.sponsorships.forEach(s => (s.pledges || []).forEach(p => {
+        if (p.sponsorId === u.id && p.status !== 'withdrawn') { pledged += p.amount; n++; }
+      }));
+      base.myPledges = n;
+      base.myPledgedTotal = pledged;
+      base.openSponsorshipRequests = DB.sponsorships.filter(s => s.status === 'open').length;
+    } else if (u.role === 'transporter') {
+      const t = transporterForUser(u.id);
+      if (t) {
+        const mine = DB.deliveries.filter(d => d.transporter === t.id);
+        base.transporterStatus = t.status;
+        base.vehicle = vehicleLabel(t.vehicle);
+        base.capacityKg = t.capacityKg;
+        base.runsInProgress = mine.filter(d => d.status < 3).length;
+        base.runsCompleted = t.trips + mine.filter(d => d.status === 3).length;
+        base.openDeliveryJobs = DB.deliveries.filter(d => d.status === 0).length;
+        const s = DB.sponsorships.find(x => x.transporterId === t.id &&
+          ['in_review', 'open', 'funded', 'active'].indexOf(x.status) >= 0);
+        if (s) {
+          base.sponsorshipTitle = s.title;
+          base.sponsorshipStatus = SPONSOR_STATUS[s.status].label;
+          base.sponsorshipTarget = s.amount;
+          base.sponsorshipPledged = pledgedTotal(s);
+          base.sponsorshipPaid = paidTotal(s);
+        }
+      }
     }
     return base;
   },

@@ -723,9 +723,16 @@ A.order = async d => {
     vendor: it.vendor || null, co2: it.co2 || 0, epr: true, ts: Date.now(),
   });
   it.stage = 4;
-  if (d.kind === 'lot') (it.members || []).forEach(m => { const l = listingById(m); if (l) { l.stage = 4; l.inLot = true; } });
+  let delivery = null;
+  if (d.kind === 'lot') {
+    (it.members || []).forEach(m => { const l = listingById(m); if (l) { l.stage = 4; l.inLot = true; } });
+    // the load now has to physically move, so offer it to transporters
+    delivery = createDeliveryForOrder(DB.orders[0], it);
+  }
   saveDB(); Router.go('#/factory/orders');
-  toast('Order recorded — no payment was taken in this demo');
+  toast(delivery
+    ? 'Order recorded and offered to transporters. No payment was taken in this demo.'
+    : 'Order recorded — no payment was taken in this demo');
 };
 function certificateHtml(o) {
   const no = 'EPR-' + new Date().getFullYear() + '-' + String(o.id || '').replace(/\D/g, '').padStart(5, '0');

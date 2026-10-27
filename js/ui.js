@@ -174,17 +174,17 @@ function listingCard(item, { actions, extra, badges } = {}) {
 }
 
 /* ---------- search + filter toolbar ---------- */
-function toolbar(f, { placeholder, showSource, sourceLabels } = {}) {
+function toolbar(f, { placeholder, showSource, sourceLabels, hideCats } = {}) {
   const open = !!f.open;
   const active = (f.cat !== 'all' ? 1 : 0) + (f.loc ? 1 : 0) + (f.min ? 1 : 0) + (showSource && f.src !== 'all' ? 1 : 0);
   return `<div class="toolbar">
       <div class="input-group"><span class="ic">🔍</span>
         <input class="input" type="search" data-filter="q" value="${esc(f.q)}" placeholder="${esc(placeholder || 'Search materials, areas…')}" aria-label="Search">
       </div>
-      <div class="chips">${CAT_FILTERS.map(([k, l]) =>
-        `<button class="chip" data-act="setCat" data-v="${k}" aria-pressed="${f.cat === k}">${esc(l)}</button>`).join('')}</div>
-      <button class="btn btn-2 btn-sm" data-act="toggleFilters" aria-expanded="${open}">
-        ⚙ Filters${active ? ` <span class="badge badge-brand">${active}</span>` : ''}</button>
+      ${hideCats ? '' : `<div class="chips">${CAT_FILTERS.map(([k, l]) =>
+        `<button class="chip" data-act="setCat" data-v="${k}" aria-pressed="${f.cat === k}">${esc(l)}</button>`).join('')}</div>`}
+      ${hideCats ? '' : `<button class="btn btn-2 btn-sm" data-act="toggleFilters" aria-expanded="${open}">
+        ⚙ Filters${active ? ` <span class="badge badge-brand">${active}</span>` : ''}</button>`}
     </div>
     ${open ? `<div class="filters">
       ${field({ label: 'Pin code or locality', name: 'loc', value: f.loc, placeholder: 'e.g. 500072 or Madhapur', attrs: ' data-filter="loc"' })}
@@ -212,10 +212,20 @@ const NAV = {
     { href: '#/vendor/plan', icon: '💳', label: 'Plan & billing' },
     { href: '#/rates', icon: '💹', label: 'Scrap prices' },
   ],
+  transporter: [
+    { href: '#/transport', icon: '📊', label: 'Overview' },
+    { href: '#/transport/jobs', icon: '🚚', label: 'Delivery jobs',
+      count: () => DB.deliveries.filter(d => d.status === 0).length },
+    { href: '#/transport/mine', icon: '🧭', label: 'My runs',
+      count: u => { const t = transporterForUser(u.id); return t ? DB.deliveries.filter(d => d.transporter === t.id && d.status < 3).length : 0; } },
+    { href: '#/transport/sponsorship', icon: '🤝', label: 'Sponsorship' },
+    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
+  ],
   factory: [
     { href: '#/factory', icon: '📊', label: 'Overview' },
     { href: '#/factory/market', icon: '🏭', label: 'Marketplace' },
     { href: '#/factory/orders', icon: '📦', label: 'Orders', count: u => DB.orders.filter(o => o.buyerId === u.id).length },
+    { href: '#/factory/sponsor', icon: '🤝', label: 'Sponsor a transporter' },
     { href: '#/rates', icon: '💹', label: 'Scrap prices' },
   ],
   admin: [
@@ -223,6 +233,8 @@ const NAV = {
     { href: '#/admin/ledger', icon: '🧾', label: 'Transactions' },
     { href: '#/admin/vendors', icon: '🛺', label: 'Vendors', count: () => DB.vendors.filter(v => v.status === 'pending').length },
     { href: '#/admin/accounts', icon: '👥', label: 'Accounts' },
+    { href: '#/admin/transport', icon: '🚚', label: 'Transport & sponsorship',
+      count: () => DB.transporters.filter(t => t.status === 'pending').length + DB.sponsorships.filter(s => s.status === 'in_review').length },
     { href: '#/admin/rates', icon: '💹', label: 'Rates & compliance' },
   ],
 };

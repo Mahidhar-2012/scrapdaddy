@@ -220,6 +220,7 @@ A.setRole = (d, el) => {
   try {
     const u = Auth.adminSetRole(d.id, el.value);
     if (u.role === 'vendor') Auth._ensureVendorRecord(u);
+    if (u.role === 'transporter') Auth._ensureTransporterRecord(u);
     Router.render(); toast(`${u.name} is now ${ROLE_META[u.role].label.toLowerCase()}`);
   } catch (e) { toast(e.message, 'err'); Router.render(); }
 };
