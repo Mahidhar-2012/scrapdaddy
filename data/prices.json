@@ -4,49 +4,154 @@
   "currency": "INR",
   "defaultRegion": "IN",
   "regions": [
-    { "code": "IN", "label": "India (national indicative)", "parent": null },
-    { "code": "IN-TG-HYD", "label": "Hyderabad", "parent": "IN" },
-    { "code": "IN-DL", "label": "Delhi NCR", "parent": "IN" }
+    {
+      "code": "IN",
+      "label": "India (national)",
+      "parent": null
+    },
+    {
+      "code": "IN-TG-HYD",
+      "label": "Hyderabad",
+      "parent": "IN"
+    },
+    {
+      "code": "IN-DL",
+      "label": "Delhi NCR",
+      "parent": "IN"
+    }
   ],
   "sources": {
-    "scrapdaddy-indicative": {
-      "name": "ScrapDaddy indicative rate card",
-      "type": "indicative",
+    "scrapdaddy-ratecard": {
+      "name": "ScrapDaddy rate card",
+      "type": "market_reference",
       "url": null,
-      "note": "Maintained by the ScrapDaddy operations team. A guide price, not an offer. Individual vendors quote their own rates."
-    },
-    "kabadiwala-online": {
-      "name": "Kabadiwala Online published rate card",
-      "type": "market_reference",
-      "url": "https://kabadiwalaonline.in/price-list/",
-      "note": "Publicly published consumer rate card for Delhi NCR. Captured manually; not a live feed."
-    },
-    "urbanscrap": {
-      "name": "UrbanScrap published rate card",
-      "type": "market_reference",
-      "url": "https://urbanscrap.co/scrap-rates/",
-      "note": "Publicly published consumer rate card for Delhi NCR. Captured manually; not a live feed."
+      "note": "Rates paid to households at the door, maintained by the ScrapDaddy operations team. Quoted as a range because the amount paid depends on condition, sorting and quantity; the figure shown is the midpoint. The final amount is agreed at pickup after weighing."
     }
   },
   "prices": [
-    { "material": "copper",    "region": "IN", "unit": "kg",    "price": 850,  "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [810, 900],   "rangeSource": "kabadiwala-online" },
-    { "material": "brass",     "region": "IN", "unit": "kg",    "price": 480,  "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [415, 600],   "rangeSource": "kabadiwala-online" },
-    { "material": "aluminium", "region": "IN", "unit": "kg",    "price": 185,  "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [161, 220],   "rangeSource": "kabadiwala-online" },
-    { "material": "iron",      "region": "IN", "unit": "kg",    "price": 37,   "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [20, 48],     "rangeSource": "kabadiwala-online" },
-    { "material": "plastic",   "region": "IN", "unit": "kg",    "price": 15,   "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [11, 18],     "rangeSource": "kabadiwala-online" },
-    { "material": "paper",     "region": "IN", "unit": "kg",    "price": 14,   "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [12, 15],     "rangeSource": "kabadiwala-online" },
-    { "material": "cardboard", "region": "IN", "unit": "kg",    "price": 8,    "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [7, 8],       "rangeSource": "kabadiwala-online" },
-    { "material": "ac",        "region": "IN", "unit": "piece", "price": 5800, "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": [5393, 7493], "rangeSource": "kabadiwala-online" },
-    { "material": "fridge",    "region": "IN", "unit": "piece", "price": 750,  "source": "scrapdaddy-indicative", "updatedAt": "2026-10-20T09:00:00Z", "marketRange": null,         "rangeSource": null },
-
-    { "material": "copper",    "region": "IN-DL", "unit": "kg", "price": 860, "source": "kabadiwala-online", "updatedAt": "2026-10-18T06:30:00Z", "marketRange": [810, 900], "rangeSource": "kabadiwala-online" },
-    { "material": "iron",      "region": "IN-DL", "unit": "kg", "price": 27,  "source": "kabadiwala-online", "updatedAt": "2026-10-18T06:30:00Z", "marketRange": [20, 27],   "rangeSource": "kabadiwala-online" },
-    { "material": "paper",     "region": "IN-DL", "unit": "kg", "price": 13,  "source": "urbanscrap",        "updatedAt": "2026-10-18T06:30:00Z", "marketRange": [12, 15],   "rangeSource": "urbanscrap" },
-    { "material": "cardboard", "region": "IN-DL", "unit": "kg", "price": 7,   "source": "urbanscrap",        "updatedAt": "2026-10-18T06:30:00Z", "marketRange": [7, 8],     "rangeSource": "urbanscrap" }
+    {
+      "material": "copper",
+      "region": "IN",
+      "unit": "kg",
+      "price": 1075,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        1000,
+        1150
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "brass",
+      "region": "IN",
+      "unit": "kg",
+      "price": 660,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        600,
+        720
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "aluminium",
+      "region": "IN",
+      "unit": "kg",
+      "price": 195,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        170,
+        220
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "iron",
+      "region": "IN",
+      "unit": "kg",
+      "price": 38,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        30,
+        45
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "plastic",
+      "region": "IN",
+      "unit": "kg",
+      "price": 12,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        10,
+        15
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "paper",
+      "region": "IN",
+      "unit": "kg",
+      "price": 14,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        12,
+        15
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "cardboard",
+      "region": "IN",
+      "unit": "kg",
+      "price": 8,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        7,
+        9
+      ],
+      "rangeSource": "scrapdaddy-ratecard"
+    },
+    {
+      "material": "ac",
+      "region": "IN",
+      "unit": "piece",
+      "price": 5500,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        4500,
+        6500
+      ],
+      "rangeSource": "scrapdaddy-ratecard",
+      "note": "Higher for copper-coil units, lower for aluminium coil."
+    },
+    {
+      "material": "fridge",
+      "region": "IN",
+      "unit": "piece",
+      "price": 1150,
+      "source": "scrapdaddy-ratecard",
+      "updatedAt": "2026-10-30T05:49:32Z",
+      "marketRange": [
+        800,
+        1500
+      ],
+      "rangeSource": "scrapdaddy-ratecard",
+      "note": "Higher for double-door, lower for single-door."
+    }
   ],
   "freshness": {
     "$comment": "How old an entry may be before the UI downgrades its label.",
-    "recentHours": 48,
-    "staleHours": 336
+    "recentHours": 720,
+    "staleHours": 2160
   }
 }

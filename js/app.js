@@ -432,7 +432,9 @@ document.addEventListener('input', e => {
       f[name] = el.value;
       const kg = kgOf(f.qty, f.rk, f.unit);
       const v = $('#estValue'), m = $('#estMeta');
-      if (v) v.textContent = inr(f.mode === 'bid' ? (Number(f.ask) || estimateValue(f.qty, f.rk)) : estimateValue(f.qty, f.rk));
+      if (v) v.textContent = estimateText(f);
+      const nEl = $('#estNote');
+      if (nEl) nEl.textContent = estRangeText(f);
       if (m) m.textContent = `${num(kg)} kg · ${num(co2For(f.cat, kg))} kg CO₂ saved`;
     }
   }

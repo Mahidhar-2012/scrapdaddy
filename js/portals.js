@@ -138,11 +138,10 @@ function scanReportHtml() {
   const qty = Number(View.form.qty) || 0;
   const priced = r.priceKey && RATE_DEFS.some(d => d.key === r.priceKey) ? Pricing.get(r.priceKey) : null;
   if (qty > 0 && priced && priced.available) {
-    const kg = kgOf(View.form.qty, r.priceKey, View.form.unit);
-    const value = (View.form.unit === 'pieces' ? qty : kg) * priced.price;
+    const est = estimateRange(View.form.qty, r.priceKey);
     valueBlock = `<div class="scan-value">
         <div><div class="t-xs muted">Indicative value at your stated quantity</div>
-          <div class="strong" style="font-size:20px">${inr(value)}</div></div>
+          <div class="strong" style="font-size:20px">${esc(est ? est.text : '—')}</div></div>
         <div class="t-xs muted" style="text-align:right;max-width:52%">
           ${esc(priceSourceLine(priced))}<br>Your quantity, not a measured one.</div>
       </div>`;
@@ -234,13 +233,34 @@ function sellForm() {
         <div class="row-between"><div>
           <div class="t-sm muted">Estimated value</div>
           <div class="t-xs muted" id="estMeta">${num(kg)} kg · ${num(co2For(f.cat, kg))} kg CO₂ saved</div>
-        </div><div class="strong" style="font-size:23px" id="estValue">${inr(f.mode === 'bid' ? (Number(f.ask) || value) : value)}</div></div>
+        </div><div class="strong" style="font-size:20px;text-align:right" id="estValue">${esc(estimateText(f))}</div></div>
+        ${estRangeNote(f)}
       </div>
       <button class="btn btn-block mt-3" data-act="publish">Publish listing</button>
       <p class="t-xs muted mt-2 center">Free to list. ${qty ? '' : 'Enter a quantity to see your estimate.'}</p>
     </section>
   </div>`;
 }
+/** The headline estimate: a range when the rate card holds one. */
+function estimateText(f) {
+  if (f.mode === 'bid' && Number(f.ask) > 0) return inr(Number(f.ask));
+  const r = estimateRange(f.qty, f.rk);
+  return r ? r.text : inr(0);
+}
+/** Explains the range. Depends on the material, not on whether a quantity has
+    been typed yet, so it is visible before the user commits to a number. */
+function estRangeText(f) {
+  const p = Pricing.get(f.rk);
+  if (!p.available) return 'No rate on file for this material in your area.';
+  const bits = [];
+  if (p.marketRange) bits.push('A range, because condition and sorting change the price. The exact amount is agreed at pickup after weighing.');
+  if (p.note) bits.push(p.note);
+  return bits.join(' ');
+}
+function estRangeNote(f) {
+  return `<div class="t-xs muted mt-2" id="estNote">${esc(estRangeText(f))}</div>`;
+}
+
 function viewHouseholdSell() {
   if (!View.form) View.form = blankSellForm();
   return `<div id="sellWrap">${sellForm()}</div>`;
@@ -804,7 +824,8 @@ function priceRowsHtml() {
           <td>${badge('Unavailable', 'danger')}</td></tr>`;
       }
       return `<tr>
-        <td class="strong">${esc(p.label)}${p.inherited ? ' <span class="badge">national</span>' : ''}</td>
+        <td class="strong">${esc(p.label)}${p.inherited ? ' <span class="badge">national</span>' : ''}
+          ${p.note ? `<div class="t-xs muted" style="font-weight:400;max-width:28ch">${esc(p.note)}</div>` : ''}</td>
         <td class="n strong nowrap">${inr(p.price)} <span class="t-xs muted">/${esc(p.unit)}</span></td>
         <td class="muted t-sm nowrap">${p.marketRange ? inr(p.marketRange[0]) + ' – ' + inr(p.marketRange[1]) : '—'}</td>
         <td class="t-sm"><div>${esc((p.source && p.source.name) || '—')}</div>

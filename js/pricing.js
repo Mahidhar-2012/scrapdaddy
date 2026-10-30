@@ -131,7 +131,7 @@ const Pricing = {
                   note: 'Set in the admin console by ' + ov.by + '.' },
         type: 'indicative', updatedAt: Date.parse(ov.updatedAt) || null,
         freshness: this._freshness(Date.parse(ov.updatedAt) || null),
-        marketRange: null, rangeSource: null,
+        marketRange: null, rangeSource: null, note: null,
       };
     }
     const chain = this._chain(reg);
@@ -146,12 +146,13 @@ const Pricing = {
         updatedAt: ts, freshness: this._freshness(ts),
         marketRange: row.marketRange || null,
         rangeSource: row.rangeSource ? ((this.book.sources || {})[row.rangeSource] || null) : null,
+        note: row.note || null,
       };
     }
     return {
       available: false, price: null, unit, region: reg, inherited: false,
       source: null, type: null, updatedAt: null, freshness: 'unavailable',
-      marketRange: null, rangeSource: null,
+      marketRange: null, rangeSource: null, note: null,
     };
   },
 
@@ -212,4 +213,19 @@ function priceSourceLine(p) {
   if (p.source && p.source.name) bits.push(p.source.name);
   if (p.inherited) bits.push('national rate, no local entry');
   return bits.join(' · ');
+}
+
+/**
+ * What a quantity is worth, as a range when the price book holds one.
+ * Rates are quoted as ranges because condition, sorting and quantity move the
+ * number, so showing a single figure would promise more precision than exists.
+ */
+function estimateRange(qty, materialKey) {
+  const q = Number(qty) || 0;
+  const p = Pricing.get(materialKey);
+  if (!p.available || q <= 0) return null;
+  const mid = q * p.price;
+  if (!p.marketRange) return { text: inr(mid), mid, lo: mid, hi: mid, isRange: false };
+  const lo = q * p.marketRange[0], hi = q * p.marketRange[1];
+  return { text: inr(lo) + ' – ' + inr(hi), mid, lo, hi, isRange: true, note: p.note || null };
 }
