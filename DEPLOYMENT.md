@@ -131,6 +131,79 @@ assistant use. Per-IP hourly caps are set with `SCAN_RATE_PER_HOUR` and
 
 ---
 
+## Real accounts: email sign-in with a one-time code
+
+Until this is set up, accounts live in each visitor's browser: they do not
+follow you between devices, and the access checks are not a security boundary.
+`GET /api/health` reports `accounts.mode` as `browser-only` or `server`.
+
+Setting it up needs three free services and about fifteen minutes.
+
+### 1. Database — Supabase
+
+1. Create a project at [supabase.com](https://supabase.com). Keep the database
+   password somewhere safe; you will not need it here.
+2. Open **SQL Editor -> New query**, paste the whole of
+   [`db/schema.sql`](db/schema.sql), and press **Run**.
+3. **Project Settings -> API** gives you two values:
+   - the **Project URL** -> `SUPABASE_URL`
+   - the **`service_role`** key -> `SUPABASE_SERVICE_ROLE_KEY`
+
+> The service role key bypasses row level security by design. It is read only
+> on the server. Never put it in client code, and never in a variable your host
+> exposes to the browser. The `anon` key is not used by this project at all.
+
+### 2. Email — Resend
+
+1. Create a key at [resend.com/api-keys](https://resend.com/api-keys) -> `RESEND_API_KEY`.
+2. Set `EMAIL_FROM`. `ScrapDaddy <onboarding@resend.dev>` works immediately but
+   only delivers to the address you signed up with — fine for testing, no use
+   for real users. For those, verify your own domain in Resend and send from it.
+
+### 3. A signing secret
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+Put the output in `AUTH_SECRET`. It hashes one-time codes and session tokens.
+Changing it later signs everybody out, which is also how you revoke every
+session at once.
+
+### 4. Add all five to your host and redeploy
+
+Then check:
+
+```
+https://your-project.vercel.app/api/health
+```
+
+`providers.accounts.mode` should read `server`. Add `?probe=1` and the database
+is contacted as well, so a missing schema shows up as a specific error rather
+than a mysterious failure.
+
+### Making the first administrator
+
+Self-service sign-up can never create one. Uncomment the last statement in
+`db/schema.sql`, put your email in it, and run it. Then sign in with a code.
+
+### How it works
+
+- A code is six digits from a cryptographic source, valid for ten minutes and
+  usable once. Only its hash is stored, so the database never holds a live code.
+- Five wrong attempts burn the code. Three codes per address per fifteen
+  minutes, plus a per-connection cap.
+- A new code supersedes any outstanding one.
+- Sessions are server-side rows keyed by the hash of the token. The token
+  itself lives only in an httpOnly cookie, so page scripts cannot read it.
+- Signing out deletes the row, not just the cookie, so a copied cookie dies too.
+- The cookie is `Secure; SameSite=None` so it works when the front end sits on
+  a different origin to the API. That requires `ALLOWED_ORIGINS` to name your
+  front end exactly — a wildcard is refused by browsers alongside credentials.
+- If the email cannot be sent, the code is invalidated rather than left usable.
+
+---
+
 ## Still required before real money moves
 
 Payments are **wired but not finishable** as things stand:

@@ -16,9 +16,15 @@ function applyCors(req, res) {
     return false; // origin not permitted
   }
   res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
+  // The session cookie only travels cross-origin when credentials are allowed,
+  // and a browser refuses that alongside a wildcard origin. So when the front
+  // end is on another origin, ALLOWED_ORIGINS has to name it explicitly.
+  if (origin && res.getHeader('Access-Control-Allow-Origin') === origin) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   return true;
 }
 

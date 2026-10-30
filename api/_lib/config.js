@@ -68,6 +68,15 @@ const config = {
     webhookSecret: () => readSecret('RAZORPAY_WEBHOOK_SECRET'),
     endpoint: () => 'https://api.razorpay.com/v1/orders',
   },
+  accounts: {
+    /* Real accounts need all three: somewhere to store them, something to send
+       codes with, and a secret to hash codes and session tokens. */
+    dbUrl: () => (process.env.SUPABASE_URL || '').trim(),
+    dbKey: () => readSecret('SUPABASE_SERVICE_ROLE_KEY'),
+    emailKey: () => readSecret('RESEND_API_KEY'),
+    emailFrom: () => (process.env.EMAIL_FROM || '').trim(),
+    authSecret: () => readSecret('AUTH_SECRET'),
+  },
   allowedOrigins() {
     const raw = process.env.ALLOWED_ORIGINS;
     if (!raw || !raw.trim()) return null; // null = allow any origin (see http.js)

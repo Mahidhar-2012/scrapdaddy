@@ -7,6 +7,9 @@
 
 const { config } = require('./_lib/config');
 const { handler, send, fetchWithTimeout } = require('./_lib/http');
+const db = require('./_lib/db');
+const mail = require('./_lib/email');
+const S = require('./_lib/session');
 
 async function probeGroq(key, model) {
   try {
@@ -99,6 +102,15 @@ module.exports = handler(['GET'], async (req, res) => {
     },
   };
 
+  const dbc = db.creds(), mailc = mail.creds(), authc = S.secret();
+  providers.accounts = {
+    configured: dbc.ok && mailc.ok && authc.ok,
+    database: { configured: dbc.ok, provider: 'supabase', reason: dbc.reason },
+    email: { configured: mailc.ok, provider: 'resend', from: mailc.ok ? mailc.from : null, reason: mailc.reason },
+    secret: { configured: authc.ok, reason: authc.reason },
+    mode: (dbc.ok && mailc.ok && authc.ok) ? 'server' : 'browser-only',
+  };
+
   const url = new URL(req.url, 'http://localhost');
   if (url.searchParams.get('probe') === '1') {
     const [g, o] = await Promise.all([
@@ -107,6 +119,7 @@ module.exports = handler(['GET'], async (req, res) => {
     ]);
     providers.chat.probe = g;
     providers.vision.probe = o;
+    if (dbc.ok) providers.accounts.database.probe = await db.ping();
   }
 
   send(res, 200, {
@@ -123,6 +136,11 @@ module.exports = handler(['GET'], async (req, res) => {
         : config.vision.provider() === 'openai' ? 'OPENAI_API_KEY' : 'GROQ_API_KEY',
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : '(not set)',
       GROQ_API_KEY: process.env.GROQ_API_KEY ? 'set' : '(not set)',
+      SUPABASE_URL: process.env.SUPABASE_URL ? 'set' : '(not set)',
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : '(not set)',
+      RESEND_API_KEY: process.env.RESEND_API_KEY ? 'set' : '(not set)',
+      EMAIL_FROM: process.env.EMAIL_FROM ? JSON.stringify(process.env.EMAIL_FROM) : '(not set)',
+      AUTH_SECRET: process.env.AUTH_SECRET ? 'set' : '(not set)',
     },
     rateLimits: { scanPerHour: config.limits.scanPerHour, chatPerHour: config.limits.chatPerHour },
     providers,
