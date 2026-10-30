@@ -5,14 +5,14 @@
 'use strict';
 
 /* ---------- toasts ---------- */
-const TOAST_ICON = { ok: '✓', warn: '!', err: '✕', info: 'i' };
+const TOAST_ICON = { ok: 'check', warn: 'alert', err: 'close', info: 'info' };
 function toast(message, kind) {
   const k = kind || 'ok';
   const host = $('#toasts');
   if (!host) return;
   const el = document.createElement('div');
   el.className = 'toast ' + k;
-  el.innerHTML = `<span class="ti strong">${TOAST_ICON[k] || '•'}</span><span>${esc(message)}</span>`;
+  el.innerHTML = `<span class="ti">${ico(TOAST_ICON[k] || 'info', { size: 17 })}</span><span>${esc(message)}</span>`;
   host.appendChild(el);
   setTimeout(() => {
     el.style.transition = 'opacity .2s, transform .2s';
@@ -32,7 +32,7 @@ const Modal = {
     host.innerHTML =
       `<div class="box${wide ? ' wide' : ''}">
         <div class="mh"><h3 id="modalTitle">${esc(title || '')}</h3>
-          <button class="btn btn-ghost btn-icon" data-act="modalClose" aria-label="Close dialog">✕</button></div>
+          <button class="btn btn-ghost btn-icon" data-act="modalClose" aria-label="Close dialog">${ico('close')}</button></div>
         <div class="mb">${body || ''}</div>
         ${footer ? `<div class="mf">${footer}</div>` : ''}
       </div>`;
@@ -96,15 +96,16 @@ function confirmDialog({ title, body, confirmLabel, danger }) {
 
 /* ---------- small building blocks ---------- */
 const badge = (text, tone) => `<span class="badge${tone ? ' badge-' + tone : ''}">${esc(text)}</span>`;
+/** `icon` is an icon name from icons.js, not markup. */
 const notice = (text, tone, icon) =>
-  `<div class="notice notice-${tone || 'info'}"><span class="ni">${icon || 'ℹ️'}</span><div>${text}</div></div>`;
+  `<div class="notice notice-${tone || 'info'}"><span class="ni">${ico(icon || 'info')}</span><div>${text}</div></div>`;
 
 function statCard({ label, value, detail, icon }) {
-  return `<div class="stat"><div class="k">${icon ? icon + ' ' : ''}${esc(label)}</div>
+  return `<div class="stat"><div class="k">${icon ? ico(icon, { size: 15 }) + ' ' : ''}${esc(label)}</div>
     <div class="v">${esc(String(value))}</div>${detail ? `<div class="d">${esc(detail)}</div>` : ''}</div>`;
 }
 function emptyState({ icon, title, text, action }) {
-  return `<div class="empty"><div class="e">${icon || '📭'}</div><h3>${esc(title)}</h3>
+  return `<div class="empty"><div class="e">${ico(icon || 'box', { size: 30 })}</div><h3>${esc(title)}</h3>
     <p>${esc(text || '')}</p>${action || ''}</div>`;
 }
 function field({ label, name, type, value, placeholder, hint, error, required, autocomplete, attrs, options, rows }) {
@@ -162,7 +163,7 @@ function listingCard(item, { actions, extra, badges } = {}) {
     <div class="thumb"><img src="${esc(itemPhoto(item))}" alt="" loading="lazy"><div class="ov">${tags}</div></div>
     <div class="b">
       <h3>${esc(item.title)}</h3>
-      <div class="loc">📍 <span class="trunc">${esc(isLot ? item.hub : item.locality)}</span></div>
+      <div class="loc">${ico('location')} <span class="trunc">${esc(isLot ? item.hub : item.locality)}</span></div>
       <div class="price">${inr(price)} <span>${priceLabel}</span></div>
       <div class="facts">
         <div><b>${esc(item.unit ? item.unit : num(item.kg) + ' kg')}</b><span class="t-xs muted">quantity</span></div>
@@ -178,13 +179,13 @@ function toolbar(f, { placeholder, showSource, sourceLabels, hideCats } = {}) {
   const open = !!f.open;
   const active = (f.cat !== 'all' ? 1 : 0) + (f.loc ? 1 : 0) + (f.min ? 1 : 0) + (showSource && f.src !== 'all' ? 1 : 0);
   return `<div class="toolbar">
-      <div class="input-group"><span class="ic">🔍</span>
+      <div class="input-group"><span class="ic">${ico('search')}</span>
         <input class="input" type="search" data-filter="q" value="${esc(f.q)}" placeholder="${esc(placeholder || 'Search materials, areas…')}" aria-label="Search">
       </div>
       ${hideCats ? '' : `<div class="chips">${CAT_FILTERS.map(([k, l]) =>
         `<button class="chip" data-act="setCat" data-v="${k}" aria-pressed="${f.cat === k}">${esc(l)}</button>`).join('')}</div>`}
       ${hideCats ? '' : `<button class="btn btn-2 btn-sm" data-act="toggleFilters" aria-expanded="${open}">
-        ⚙ Filters${active ? ` <span class="badge badge-brand">${active}</span>` : ''}</button>`}
+        ${ico('settings')} Filters${active ? ` <span class="badge badge-brand">${active}</span>` : ''}</button>`}
     </div>
     ${open ? `<div class="filters">
       ${field({ label: 'Pin code or locality', name: 'loc', value: f.loc, placeholder: 'e.g. 500072 or Madhapur', attrs: ' data-filter="loc"' })}
@@ -199,43 +200,43 @@ const resultCount = (n, noun) => `<div class="resbar"><span class="n">${n} ${esc
 /* ---------- application shell ---------- */
 const NAV = {
   household: [
-    { href: '#/household', icon: '📊', label: 'Overview' },
-    { href: '#/household/sell', icon: '📸', label: 'Sell scrap' },
-    { href: '#/household/listings', icon: '📋', label: 'My listings', count: u => DB.listings.filter(l => l.owner === u.id).length },
-    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
+    { href: '#/household', icon: 'dashboard', label: 'Overview' },
+    { href: '#/household/sell', icon: 'camera', label: 'Sell scrap' },
+    { href: '#/household/listings', icon: 'clipboard', label: 'My listings', count: u => DB.listings.filter(l => l.owner === u.id).length },
+    { href: '#/rates', icon: 'trending', label: 'Scrap prices' },
   ],
   vendor: [
-    { href: '#/vendor', icon: '📊', label: 'Overview' },
-    { href: '#/vendor/find', icon: '🔍', label: 'Jobs board', count: () => DB.listings.filter(l => l.stage === 0).length },
-    { href: '#/vendor/pickups', icon: '🛺', label: 'My pickups', count: u => { const v = vendorForUser(u.id); return v ? DB.listings.filter(l => l.vendor === v.id && l.stage >= 1 && l.stage <= 3).length : 0; } },
-    { href: '#/vendor/hub', icon: '🏗️', label: 'Hub inventory' },
-    { href: '#/vendor/plan', icon: '💳', label: 'Plan & billing' },
-    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
+    { href: '#/vendor', icon: 'dashboard', label: 'Overview' },
+    { href: '#/vendor/find', icon: 'search', label: 'Jobs board', count: () => DB.listings.filter(l => l.stage === 0).length },
+    { href: '#/vendor/pickups', icon: 'truck', label: 'My pickups', count: u => { const v = vendorForUser(u.id); return v ? DB.listings.filter(l => l.vendor === v.id && l.stage >= 1 && l.stage <= 3).length : 0; } },
+    { href: '#/vendor/hub', icon: 'warehouse', label: 'Hub inventory' },
+    { href: '#/vendor/plan', icon: 'card', label: 'Plan & billing' },
+    { href: '#/rates', icon: 'trending', label: 'Scrap prices' },
   ],
   transporter: [
-    { href: '#/transport', icon: '📊', label: 'Overview' },
-    { href: '#/transport/jobs', icon: '🚚', label: 'Delivery jobs',
+    { href: '#/transport', icon: 'dashboard', label: 'Overview' },
+    { href: '#/transport/jobs', icon: 'truck', label: 'Delivery jobs',
       count: () => DB.deliveries.filter(d => d.status === 0).length },
-    { href: '#/transport/mine', icon: '🧭', label: 'My runs',
+    { href: '#/transport/mine', icon: 'compass', label: 'My runs',
       count: u => { const t = transporterForUser(u.id); return t ? DB.deliveries.filter(d => d.transporter === t.id && d.status < 3).length : 0; } },
-    { href: '#/transport/sponsorship', icon: '🤝', label: 'Sponsorship' },
-    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
+    { href: '#/transport/sponsorship', icon: 'handshake', label: 'Sponsorship' },
+    { href: '#/rates', icon: 'trending', label: 'Scrap prices' },
   ],
   factory: [
-    { href: '#/factory', icon: '📊', label: 'Overview' },
-    { href: '#/factory/market', icon: '🏭', label: 'Marketplace' },
-    { href: '#/factory/orders', icon: '📦', label: 'Orders', count: u => DB.orders.filter(o => o.buyerId === u.id).length },
-    { href: '#/factory/sponsor', icon: '🤝', label: 'Sponsor a transporter' },
-    { href: '#/rates', icon: '💹', label: 'Scrap prices' },
+    { href: '#/factory', icon: 'dashboard', label: 'Overview' },
+    { href: '#/factory/market', icon: 'factory', label: 'Marketplace' },
+    { href: '#/factory/orders', icon: 'box', label: 'Orders', count: u => DB.orders.filter(o => o.buyerId === u.id).length },
+    { href: '#/factory/sponsor', icon: 'handshake', label: 'Sponsor a transporter' },
+    { href: '#/rates', icon: 'trending', label: 'Scrap prices' },
   ],
   admin: [
-    { href: '#/admin', icon: '📊', label: 'Overview' },
-    { href: '#/admin/ledger', icon: '🧾', label: 'Transactions' },
-    { href: '#/admin/vendors', icon: '🛺', label: 'Vendors', count: () => DB.vendors.filter(v => v.status === 'pending').length },
-    { href: '#/admin/accounts', icon: '👥', label: 'Accounts' },
-    { href: '#/admin/transport', icon: '🚚', label: 'Transport & sponsorship',
+    { href: '#/admin', icon: 'dashboard', label: 'Overview' },
+    { href: '#/admin/ledger', icon: 'receipt', label: 'Transactions' },
+    { href: '#/admin/vendors', icon: 'truck', label: 'Vendors', count: () => DB.vendors.filter(v => v.status === 'pending').length },
+    { href: '#/admin/accounts', icon: 'users', label: 'Accounts' },
+    { href: '#/admin/transport', icon: 'truck', label: 'Transport & sponsorship',
       count: () => DB.transporters.filter(t => t.status === 'pending').length + DB.sponsorships.filter(s => s.status === 'in_review').length },
-    { href: '#/admin/rates', icon: '💹', label: 'Rates & compliance' },
+    { href: '#/admin/rates', icon: 'trending', label: 'Rates & compliance' },
   ],
 };
 
@@ -249,17 +250,17 @@ function renderShell(route) {
   const items = NAV[user.role] || [];
   const here = (location.hash || '').split('?')[0];
   $('#sidebar').innerHTML =
-    `<div class="sb-brand"><span class="lg">♻️</span><span>Scrap<b>Daddy</b></span></div>
+    `<div class="sb-brand">${brandLockup({ mark: 28 })}</div>
      <nav class="sb-nav">
        <div class="sb-sec">${esc(meta.label)} portal</div>
        ${items.map(i => {
           const n = i.count ? i.count(user) : null;
           const on = here === i.href || (i.href !== ROLE_META[user.role].home && here.indexOf(i.href) === 0);
-          return `<a href="${i.href}"${on ? ' aria-current="page"' : ''}><span class="ic">${i.icon}</span>${esc(i.label)}${
+          return `<a href="${i.href}"${on ? ' aria-current="page"' : ''}><span class="ic">${ico(i.icon)}</span>${esc(i.label)}${
             n ? `<span class="cnt">${n}</span>` : ''}</a>`;
        }).join('')}
        <div class="sb-sec">Account</div>
-       <a href="#/account"${here === '#/account' ? ' aria-current="page"' : ''}><span class="ic">⚙️</span>Settings</a>
+       <a href="#/account"${here === '#/account' ? ' aria-current="page"' : ''}><span class="ic">${ico('settings')}</span>Settings</a>
      </nav>
      <div class="sb-foot">
        <button class="usercard" data-act="goAccount">
@@ -269,16 +270,16 @@ function renderShell(route) {
        <button class="btn btn-2 btn-sm btn-block mt-2" data-act="signOut">Sign out</button>
      </div>`;
   $('#topbar').innerHTML =
-    `<button class="btn btn-ghost btn-icon burger" data-act="toggleNav" aria-label="Open navigation" aria-expanded="false">☰</button>
+    `<button class="btn btn-ghost btn-icon burger" data-act="toggleNav" aria-label="Open navigation" aria-expanded="false">${ico('menu')}</button>
      <div class="grow"><h1>${esc(route.title || meta.label)}</h1>${route.subtitle ? `<div class="sub">${esc(route.subtitle)}</div>` : ''}</div>
-     <a class="btn btn-2 btn-sm" href="#/rates">💹 Prices</a>`;
+     <a class="btn btn-2 btn-sm" href="#/rates">${ico('trending')} Prices</a>`;
 }
 
 function renderDemoBanner() {
   const host = $('#banner');
   if (!host) return;
   if (Store.read('scrapdaddy.demoBannerHidden', false)) { host.innerHTML = ''; return; }
-  host.innerHTML = `<div class="demobar"><span>⚠️</span>
-    <span>Demo environment — listings, vendors and prices below are sample data, and accounts are stored in this browser only.</span>
+  host.innerHTML = `<div class="demobar"><span>${ico('info')}</span>
+    <span>Demo — the listings and prices here are samples.</span>
     <button class="btn-link t-xs" data-act="hideDemoBanner">Hide</button></div>`;
 }

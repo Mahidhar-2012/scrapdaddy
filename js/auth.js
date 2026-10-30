@@ -3,7 +3,7 @@
 
    ARCHITECTURE NOTE (important, please read before Phase 2)
    ---------------------------------------------------------------------------
-   ScrapDaddy is currently a static site (GitHub Pages). There is no server, so
+   ScrapHub is currently a static site (GitHub Pages). There is no server, so
    every check in this file runs in the visitor's own browser. That is enough to
    give real users real accounts, sessions and role-based navigation, but it is
    NOT a security boundary: anyone with browser dev tools can edit local state.
@@ -32,11 +32,11 @@ const ROLES = ['household', 'vendor', 'factory', 'transporter', 'admin'];
 const SIGNUP_ROLES = ['household', 'vendor', 'factory', 'transporter'];
 
 const ROLE_META = {
-  household: { label: 'Household',  icon: '🏡', home: '#/household', blurb: 'Sell scrap from your home or society.' },
-  vendor:    { label: 'Vendor',     icon: '🛺', home: '#/vendor',    blurb: 'Collect, weigh and consolidate scrap.' },
-  factory:   { label: 'Factory',    icon: '🏭', home: '#/factory',   blurb: 'Buy graded lots with GST paperwork.' },
-  transporter: { label: 'Transporter', icon: '🚚', home: '#/transport', blurb: 'Move lots from hubs to factories.' },
-  admin:     { label: 'Administrator', icon: '🛡️', home: '#/admin',  blurb: 'Platform operations and oversight.' },
+  household: { label: 'Household',  icon: 'home', home: '#/household', blurb: 'Sell scrap from your home or society.' },
+  vendor:    { label: 'Vendor',     icon: 'truck', home: '#/vendor',    blurb: 'Collect, weigh and consolidate scrap.' },
+  factory:   { label: 'Factory',    icon: 'factory', home: '#/factory',   blurb: 'Buy graded lots with GST paperwork.' },
+  transporter: { label: 'Transporter', icon: 'truck', home: '#/transport', blurb: 'Move lots from hubs to factories.' },
+  admin:     { label: 'Administrator', icon: 'shieldCheck', home: '#/admin',  blurb: 'Platform operations and oversight.' },
 };
 
 const SESSION_IDLE_MS = 30 * 60 * 1000;   // signed out after 30 min of inactivity

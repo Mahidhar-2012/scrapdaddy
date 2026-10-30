@@ -29,7 +29,7 @@ const transporterApproved = t => !!t && t.status === 'approved';
 
 function transporterPendingNotice() {
   return notice('<strong>Account awaiting verification.</strong> You can look around, but accepting delivery jobs and ' +
-    'publishing a sponsorship request unlock once an administrator has checked your vehicle and documents.', 'amber', '⏳');
+    'publishing a sponsorship request unlock once an administrator has checked your vehicle and documents.', 'amber', 'hourglass');
 }
 
 /** Called when a factory buys a hub lot, so the load has a way of moving. */
@@ -83,11 +83,11 @@ function viewTransportOverview() {
 
   return `${transporterApproved(t) ? '' : transporterPendingNotice() + '<div class="mt-4"></div>'}
     <div class="stats">
-      ${statCard({ label: 'Open jobs', value: open, detail: 'Loads waiting for a carrier', icon: '🚚' })}
-      ${statCard({ label: 'Runs in progress', value: active.length, detail: 'Accepted but not delivered', icon: '🧭' })}
+      ${statCard({ label: 'Open jobs', value: open, detail: 'Loads waiting for a carrier', icon: 'truck' })}
+      ${statCard({ label: 'Runs in progress', value: active.length, detail: 'Accepted but not delivered', icon: 'compass' })}
       ${statCard({ label: 'Completed runs', value: t.trips + done.length,
-        detail: num((t.kgMoved + done.reduce((n, d) => n + d.kg, 0)) / 1000) + ' tonnes moved', icon: '✅' })}
-      ${statCard({ label: 'Earned here', value: inr(earned), detail: 'Delivery fees on this platform', icon: '💰' })}
+        detail: num((t.kgMoved + done.reduce((n, d) => n + d.kg, 0)) / 1000) + ' tonnes moved', icon: 'check' })}
+      ${statCard({ label: 'Earned here', value: inr(earned), detail: 'Delivery fees on this platform', icon: 'coins' })}
     </div>
     <div class="split mt-6">
       <section class="card"><div class="card-h"><h3>Runs in progress</h3>
@@ -95,14 +95,14 @@ function viewTransportOverview() {
         <div class="card-b">${active.length
           ? active.slice(0, 4).map(d => `<div class="kv"><span class="k trunc" style="max-width:58%">${esc(d.title)}</span>
               <span class="v">${badge(DELIVERY_STAGES[d.status], d.status === 0 ? 'amber' : 'info')}</span></div>`).join('')
-          : emptyState({ icon: '🚚', title: 'Nothing on the road', text: 'Accept a delivery job to get started.',
+          : emptyState({ icon: 'truck', title: 'Nothing on the road', text: 'Accept a delivery job to get started.',
               action: '<a class="btn" href="#/transport/jobs">Open jobs</a>' })}</div></section>
       <section class="card"><div class="card-h"><h3>Sponsorship</h3>
         <a class="btn btn-2 btn-sm" href="#/transport/sponsorship">Manage</a></div>
         <div class="card-b">${live
           ? `<div class="strong">${esc(live.title)}</div>${sponsorProgress(live)}
              <div class="mt-3">${badge(SPONSOR_STATUS[live.status].label, SPONSOR_STATUS[live.status].tone)}</div>`
-          : emptyState({ icon: '🤝', title: 'No active request',
+          : emptyState({ icon: 'handshake', title: 'No active request',
               text: 'Ask sponsors to fund a vehicle, a battery or running costs.',
               action: '<a class="btn" href="#/transport/sponsorship">Create a request</a>' })}</div></section>
     </div>`;
@@ -115,7 +115,7 @@ function transportJobsHtml() {
   const pool = openJobs.map(d => Object.assign({}, d, { locality: d.from, desc: d.to }));
   const items = filterItems(pool, Object.assign({}, f, { src: 'all' }));
   if (!items.length) {
-    return emptyState({ icon: '🚚', title: openJobs.length ? 'No jobs match' : 'No delivery jobs right now',
+    return emptyState({ icon: 'truck', title: openJobs.length ? 'No jobs match' : 'No delivery jobs right now',
       text: openJobs.length ? 'Try a different material or clear the filters.'
         : 'A job appears here whenever a factory buys a hub lot that needs moving.' });
   }
@@ -140,7 +140,7 @@ function viewTransportJobs() {
 function viewTransportMine() {
   const t = myTransporter();
   const mine = DB.deliveries.filter(d => d.transporter === t.id).sort((a, b) => b.offeredAt - a.offeredAt);
-  if (!mine.length) return emptyState({ icon: '🧭', title: 'No runs yet',
+  if (!mine.length) return emptyState({ icon: 'compass', title: 'No runs yet',
     text: 'Jobs you accept appear here so you can mark collection and delivery.',
     action: '<a class="btn" href="#/transport/jobs">Find work</a>' });
   return `<div class="listgrid">${mine.map(d => {
@@ -182,13 +182,13 @@ function sponsorshipCard(s, opts) {
     ${o.forSponsor && t ? `<div class="row mt-3" style="gap:9px">
       <span class="avatar">${esc(initials(t.name))}</span>
       <div><div class="strong t-sm">${esc(t.name)}</div>
-        <div class="t-xs muted">${esc(vehicleLabel(t.vehicle))} · ${num(t.trips)} runs · ${num(t.kgMoved / 1000)} t moved${t.verified ? ' · ✅ verified' : ''}</div>
+        <div class="t-xs muted">${esc(vehicleLabel(t.vehicle))} · ${num(t.trips)} runs · ${num(t.kgMoved / 1000)} t moved${t.verified ? ` · ${ico('check')} verified` : ''}</div>
         <div class="t-xs muted">${esc(t.area || 'Area not stated')}</div></div></div>` : ''}
     <p class="t-sm mt-3">${esc(s.detail)}</p>
     ${sponsorProgress(s)}
-    ${(s.benefits || []).length ? `<div class="scan-sec"><div class="scan-sec-h">🎁 What the sponsor gets</div>
+    ${(s.benefits || []).length ? `<div class="scan-sec"><div class="scan-sec-h">${ico('gift')} What the sponsor gets</div>
       <ul class="scan-list">${s.benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
-    ${(s.pledges || []).length ? `<div class="scan-sec"><div class="scan-sec-h">🤝 Pledges</div>
+    ${(s.pledges || []).length ? `<div class="scan-sec"><div class="scan-sec-h">${ico('handshake')} Pledges</div>
       ${s.pledges.map(p => `<div class="kv"><span class="k">${esc(p.sponsorName)} · ${timeAgo(p.at)}</span>
         <span class="v">${inr(p.amount)} ${badge(PLEDGE_STATUS[p.status].label, PLEDGE_STATUS[p.status].tone)}</span></div>`).join('')}</div>` : ''}
     ${o.actions ? `<div class="mt-3" style="display:flex;gap:7px;flex-wrap:wrap">${o.actions}</div>` : ''}
@@ -204,7 +204,7 @@ function viewTransportSponsorship() {
   return `${transporterApproved(t) ? '' : transporterPendingNotice() + '<div class="mt-4"></div>'}
     ${notice('A sponsorship is an agreement, not a loan or an investment. You ask for one specific, costed thing and say ' +
       'what the sponsor gets in return. An administrator checks the request before sponsors can see it, and ' +
-      '<strong>a pledge only becomes money once it has actually been paid</strong> — the status shows which is which.', 'info', 'ℹ️')}
+      '<strong>a pledge only becomes money once it has actually been paid</strong> — the status shows which is which.', 'info', 'info')}
     <div class="mt-4">${mine.length
       ? `<div class="listgrid">${mine.map(s => {
           let actions = '';
@@ -215,7 +215,7 @@ function viewTransportSponsorship() {
           }
           return sponsorshipCard(s, { actions });
         }).join('')}</div>`
-      : emptyState({ icon: '🤝', title: 'No sponsorship requests yet',
+      : emptyState({ icon: 'handshake', title: 'No sponsorship requests yet',
           text: 'Ask sponsors to fund a vehicle, a battery, servicing or running costs.' })}</div>
     ${canCreate ? `<section class="card card-p mt-6"><h3>New sponsorship request</h3>
       <p class="t-sm muted" style="margin:4px 0 14px">Be specific about the amount and what a sponsor receives.</p>
@@ -248,7 +248,7 @@ function sponsorListHtml() {
     return (s.title + ' ' + s.detail + ' ' + purposeLabel(s.purpose) + ' ' + (t.name || '') + ' ' + (t.area || ''))
       .toLowerCase().indexOf(q) >= 0;
   });
-  if (!items.length) return emptyState({ icon: '🤝', title: openList.length ? 'Nothing matches' : 'No open requests',
+  if (!items.length) return emptyState({ icon: 'handshake', title: openList.length ? 'Nothing matches' : 'No open requests',
     text: openList.length ? 'Try a different search.' : 'Transporters have no live sponsorship requests at the moment.' });
   const u = Auth.user();
   return resultCount(items.length, 'request') + `<div class="listgrid">${items.map(s => {
@@ -273,10 +273,10 @@ function viewFactorySponsor() {
   myPledges.forEach(x => { requests[x.s.id] = 1; });
   return `${notice('Sponsoring a transporter funds a specific thing they have costed — a battery, a vehicle, running costs — ' +
       'in return for what they have listed. <strong>A pledge here is a commitment, not a payment.</strong> Nothing is charged, ' +
-      'and the request stays "awaiting payment" until money has actually changed hands.', 'info', '🤝')}
+      'and the request stays "awaiting payment" until money has actually changed hands.', 'info', 'handshake')}
     ${myPledges.length ? `<div class="stats mt-4">
-      ${statCard({ label: 'Your pledges', value: myPledges.length, detail: 'Across ' + Object.keys(requests).length + ' request(s)', icon: '🤝' })}
-      ${statCard({ label: 'Committed', value: inr(committed), detail: 'Not yet charged', icon: '💰' })}
+      ${statCard({ label: 'Your pledges', value: myPledges.length, detail: 'Across ' + Object.keys(requests).length + ' request(s)', icon: 'handshake' })}
+      ${statCard({ label: 'Committed', value: inr(committed), detail: 'Not yet charged', icon: 'coins' })}
     </div>` : ''}
     <div class="mt-4">${toolbar(f, { placeholder: 'Search transporters or requests…', hideCats: true })}</div>
     <div id="results">${sponsorListHtml()}</div>`;

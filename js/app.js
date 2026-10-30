@@ -11,15 +11,15 @@ function authShell(inner) {
   return `<div class="auth">
     <section class="auth-art">
       <div class="glow"></div>
-      <div class="bl lg">♻️ Scrap<b>Daddy</b></div>
+      <div class="bl">${brandLockup({ mark: 36 })}</div>
       <div class="bl">
         <h2>Turn household scrap into fair, traceable value.</h2>
         <p>One platform for residents, local vendors and recycling factories — with weighed quantities,
            transparent rates and GST-ready paperwork.</p>
         <ul class="auth-pts">
-          <li><span class="tick">✓</span><span>Free doorstep pickup at published rates</span></li>
-          <li><span class="tick">✓</span><span>Verified vendors who weigh on a digital scale</span></li>
-          <li><span class="tick">✓</span><span>Bulk lots and tax paperwork for factories</span></li>
+          <li><span class="tick">${ico('check')}</span><span>Free doorstep pickup at published rates</span></li>
+          <li><span class="tick">${ico('check')}</span><span>Verified vendors who weigh on a digital scale</span></li>
+          <li><span class="tick">${ico('check')}</span><span>Bulk lots and tax paperwork for factories</span></li>
         </ul>
       </div>
       <div class="auth-stats">
@@ -31,7 +31,7 @@ function authShell(inner) {
     <section class="auth-form"><div class="auth-box">${inner}</div></section>
   </div>`;
 }
-const authError = () => AuthForm.error ? `<div class="mt-3" style="margin-bottom:16px">${notice(esc(AuthForm.error), 'danger', '⚠️')}</div>` : '';
+const authError = () => AuthForm.error ? `<div class="mt-3" style="margin-bottom:16px">${notice(esc(AuthForm.error), 'danger', 'alert')}</div>` : '';
 const submitBtn = label => `<button class="btn btn-lg btn-block" type="submit" ${AuthForm.busy ? 'disabled' : ''}>
   ${AuthForm.busy ? '<span class="spinner sm"></span> Please wait…' : esc(label)}</button>`;
 
@@ -40,10 +40,10 @@ function viewSignIn() {
   Auth.expiredReason = null;
   return authShell(`
     <h1>Sign in</h1>
-    <p class="sub">Access your ScrapDaddy portal.</p>
+    <p class="sub">Access your ScrapHub portal.</p>
     ${expired ? `<div style="margin-bottom:16px">${notice(expired === 'idle'
       ? 'You were signed out after 30 minutes of inactivity.'
-      : 'Your session reached its time limit. Please sign in again.', 'amber', '⏱️')}</div>` : ''}
+      : 'Your session reached its time limit. Please sign in again.', 'amber', '⏱')}</div>` : ''}
     ${authError()}
     <form data-form="signin" novalidate>
       ${field({ label: 'Email', name: 'email', type: 'email', value: AuthForm.email, placeholder: 'you@example.com',
@@ -53,7 +53,7 @@ function viewSignIn() {
           <input class="input" id="f_password" name="password" data-input="password" autocomplete="current-password"
             type="${AuthForm.show ? 'text' : 'password'}" value="${esc(AuthForm.password)}" placeholder="Your password">
           <button class="btn btn-ghost btn-icon" type="button" data-act="togglePw"
-            aria-label="${AuthForm.show ? 'Hide' : 'Show'} password">${AuthForm.show ? '🙈' : '👁️'}</button>
+            aria-label="${AuthForm.show ? 'Hide' : 'Show'} password">${AuthForm.show ? `${ico('eyeOff')}` : `${ico('eye')}`}</button>
         </span>
       </label>
       <div class="row-between" style="margin:-4px 0 16px">
@@ -61,7 +61,7 @@ function viewSignIn() {
       </div>
       ${submitBtn('Sign in')}
     </form>
-    <p class="auth-alt">New to ScrapDaddy? <a href="#/signup">Create an account</a></p>
+    <p class="auth-alt">New to ScrapHub? <a href="#/signup">Create an account</a></p>
     <div class="auth-foot">
       <div class="t-xs muted strong">DEMO ACCOUNTS — sample data, safe to use</div>
       <div class="demo-accounts">
@@ -95,7 +95,7 @@ function viewSignUp() {
           <input class="input" id="f_password" name="password" data-input="password" autocomplete="new-password"
             type="${AuthForm.show ? 'text' : 'password'}" value="${esc(AuthForm.password)}" placeholder="At least 8 characters">
           <button class="btn btn-ghost btn-icon" type="button" data-act="togglePw"
-            aria-label="${AuthForm.show ? 'Hide' : 'Show'} password">${AuthForm.show ? '🙈' : '👁️'}</button>
+            aria-label="${AuthForm.show ? 'Hide' : 'Show'} password">${AuthForm.show ? `${ico('eyeOff')}` : `${ico('eye')}`}</button>
         </span>
         <span class="pw-meter"><i id="pwBar" style="width:${score * 25}%;background:${colors[score]}"></i></span>
         <span class="hint">Use at least 8 characters, including a letter and a number.</span>
@@ -110,7 +110,7 @@ function viewForgot() {
     <h1>Reset password</h1>
     <p class="sub">Set a new password for your account.</p>
     ${notice(`<strong>Demo limitation.</strong> No email is sent — the new password is applied immediately in this browser.
-      A real deployment must email a single-use, expiring reset link from the server.`, 'amber', '⚠️')}
+      A real deployment must email a single-use, expiring reset link from the server.`, 'amber', 'alert')}
     <div class="mt-4"></div>
     ${authError()}
     <form data-form="reset" novalidate>
@@ -123,12 +123,12 @@ function viewForgot() {
 
 /* ---------- error views ---------- */
 const viewForbidden = () => emptyState({
-  icon: '🔒', title: 'You do not have access to this area',
-  text: 'This page belongs to a different ScrapDaddy portal. If you think this is wrong, contact an administrator.',
+  icon: 'ban', title: 'You do not have access to this area',
+  text: 'This page belongs to a different ScrapHub portal. If you think this is wrong, contact an administrator.',
   action: `<a class="btn" href="${Auth.homeFor(Auth.role())}">Back to my portal</a>`,
 });
 const viewNotFound = () => emptyState({
-  icon: '🧭', title: 'Page not found', text: 'That link does not lead anywhere in ScrapDaddy.',
+  icon: 'compass', title: 'Page not found', text: 'That link does not lead anywhere in ScrapHub.',
   action: `<a class="btn" href="${Auth.isSignedIn() ? Auth.homeFor(Auth.role()) : '#/login'}">Go back</a>`,
 });
 
@@ -138,25 +138,25 @@ const ROUTES = [
   { path: '#/signup', chrome: 'auth', guest: true, render: viewSignUp },
   { path: '#/forgot', chrome: 'auth', guest: true, render: viewForgot },
 
-  { path: '#/household',          roles: ['household'], title: 'Overview',    subtitle: 'Your scrap at a glance', render: viewHouseholdOverview },
-  { path: '#/household/sell',     roles: ['household'], title: 'Sell scrap',  subtitle: 'List an item for pickup', render: viewHouseholdSell },
-  { path: '#/household/listings', roles: ['household'], title: 'My listings', subtitle: 'Track offers and pickups', render: viewHouseholdListings },
+  { path: '#/household',          roles: ['household'], title: 'Overview',    subtitle: 'What you have listed, and what it earned', render: viewHouseholdOverview },
+  { path: '#/household/sell',     roles: ['household'], title: 'Sell scrap',  subtitle: 'Photograph it, name a quantity, book a free pickup', render: viewHouseholdSell },
+  { path: '#/household/listings', roles: ['household'], title: 'My listings', subtitle: 'Offers from vendors, and where each pickup has got to', render: viewHouseholdListings },
 
   { path: '#/vendor',         roles: ['vendor'], title: 'Overview',      subtitle: 'Your collection round', render: viewVendorOverview },
-  { path: '#/vendor/find',    roles: ['vendor'], title: 'Jobs board',    subtitle: 'Open pickups near you', render: viewVendorFind },
-  { path: '#/vendor/pickups', roles: ['vendor'], title: 'My pickups',    subtitle: 'Weigh, pay and move to hub', render: viewVendorPickups },
-  { path: '#/vendor/hub',     roles: ['vendor'], title: 'Hub inventory', subtitle: 'Bale and publish factory lots', render: viewVendorHub },
+  { path: '#/vendor/find',    roles: ['vendor'], title: 'Jobs board',    subtitle: 'Jobs you can accept near you', render: viewVendorFind },
+  { path: '#/vendor/pickups', roles: ['vendor'], title: 'My pickups',    subtitle: 'Weigh on arrival, pay, then move it to your hub', render: viewVendorPickups },
+  { path: '#/vendor/hub',     roles: ['vendor'], title: 'Hub inventory', subtitle: 'Combine what you have collected into a lot to sell', render: viewVendorHub },
   { path: '#/vendor/plan',    roles: ['vendor'], title: 'Plan & billing', subtitle: 'Your subscription and limits', render: viewVendorPlan },
 
   { path: '#/factory',        roles: ['factory'], title: 'Overview',    subtitle: 'Supply and purchasing', render: viewFactoryOverview },
-  { path: '#/factory/market', roles: ['factory'], title: 'Marketplace', subtitle: 'Graded lots and direct listings', render: viewFactoryMarket },
+  { path: '#/factory/market', roles: ['factory'], title: 'Marketplace', subtitle: 'Bulk lots from hubs, or buy direct from households', render: viewFactoryMarket },
   { path: '#/factory/orders', roles: ['factory'], title: 'Orders',      subtitle: 'Your purchases and paperwork', render: viewFactoryOrders },
-  { path: '#/factory/sponsor', roles: ['factory'], title: 'Sponsor a transporter', subtitle: 'Back the carriers who move your lots', render: viewFactorySponsor },
+  { path: '#/factory/sponsor', roles: ['factory'], title: 'Sponsor a transporter', subtitle: 'Help fund the transporters who move your lots', render: viewFactorySponsor },
 
   { path: '#/transport',             roles: ['transporter'], title: 'Overview',     subtitle: 'Your runs and sponsorship', render: viewTransportOverview },
-  { path: '#/transport/jobs',        roles: ['transporter'], title: 'Delivery jobs', subtitle: 'Loads waiting for a carrier', render: viewTransportJobs },
+  { path: '#/transport/jobs',        roles: ['transporter'], title: 'Delivery jobs', subtitle: 'Loads waiting to be moved', render: viewTransportJobs },
   { path: '#/transport/mine',        roles: ['transporter'], title: 'My runs',       subtitle: 'Collect and deliver', render: viewTransportMine },
-  { path: '#/transport/sponsorship', roles: ['transporter'], title: 'Sponsorship',   subtitle: 'Ask sponsors to fund your work', render: viewTransportSponsorship },
+  { path: '#/transport/sponsorship', roles: ['transporter'], title: 'Sponsorship',   subtitle: 'Ask a sponsor to fund a vehicle or running costs', render: viewTransportSponsorship },
 
   { path: '#/admin',          roles: ['admin'], title: 'Platform overview', subtitle: 'Operations dashboard', render: viewAdminOverview },
   { path: '#/admin/ledger',   roles: ['admin'], title: 'Transactions',      subtitle: 'Every recorded movement', render: viewAdminLedger },
@@ -165,7 +165,7 @@ const ROUTES = [
   { path: '#/admin/transport', roles: ['admin'], title: 'Transport & sponsorship', subtitle: 'Carriers, runs and funding', render: viewAdminTransport },
   { path: '#/admin/rates',    roles: ['admin'], title: 'Rates & compliance', subtitle: 'Reference prices and GST', render: viewAdminRates },
 
-  { path: '#/rates',   roles: ROLES, title: 'Scrap prices', subtitle: 'Reference prices with their sources', render: viewPrices },
+  { path: '#/rates',   roles: ROLES, title: 'Scrap prices', subtitle: 'What we pay, and where each price comes from', render: viewPrices },
   { path: '#/account', roles: ROLES, title: 'Settings',     subtitle: 'Profile, password and session', render: viewAccount },
 ];
 
@@ -328,7 +328,7 @@ async function submitSignUp() {
     const user = await Auth.signUp({ name: AuthForm.name, email: AuthForm.email, password: AuthForm.password, role: AuthForm.role });
     AuthForm.busy = false; AuthForm.password = '';
     Router.go(Auth.homeFor(user.role));
-    toast('Account created — welcome to ScrapDaddy');
+    toast('Account created — welcome to ScrapHub');
   } catch (e) {
     AuthForm.busy = false; AuthForm.error = e.message; Router.render();
   }
@@ -470,8 +470,8 @@ window.addEventListener('storage', e => { if (e.key === SESSION_KEY) watchSessio
 /* ---------- bootstrap ---------- */
 (async function boot() {
   if (!Store.available()) {
-    $('#boot').innerHTML = `<div class="boot-in"><div class="boot-logo">⚠️</div>
-      <p style="max-width:34ch">ScrapDaddy needs browser storage to keep you signed in.
+    $('#boot').innerHTML = `<div class="boot-in"><div class="boot-logo">${ico('alert')}</div>
+      <p style="max-width:34ch">ScrapHub needs browser storage to keep you signed in.
       Please turn off private browsing or allow site data, then reload.</p></div>`;
     return;
   }

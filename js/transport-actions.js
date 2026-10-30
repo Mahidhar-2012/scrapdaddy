@@ -119,7 +119,7 @@ A.openPledge = d => {
         value: remaining > 0 ? Math.min(remaining, 10000) : 1000,
         attrs: ' min="500" inputmode="numeric" data-autofocus' })}
       ${notice('This records a commitment. No payment is taken now, and nothing is charged to you. ' +
-        'The transporter sees it as "awaiting payment" until money has actually changed hands.', 'amber', 'ℹ️')}`,
+        'The transporter sees it as "awaiting payment" until money has actually changed hands.', 'amber', 'info')}`,
     footer: `<button class="btn btn-2" data-act="modalClose">Cancel</button>
              <button class="btn" data-act="confirmPledge" data-id="${esc(s.id)}">Record pledge</button>`,
   });
@@ -170,13 +170,13 @@ function viewAdminTransport() {
 
   return `<div class="stats">
       ${statCard({ label: 'Transporters', value: DB.transporters.length,
-        detail: pendingT.length + ' awaiting verification', icon: '🚚' })}
+        detail: pendingT.length + ' awaiting verification', icon: 'truck' })}
       ${statCard({ label: 'Deliveries', value: deliveries.length,
-        detail: deliveries.filter(d => d.status === 3).length + ' completed', icon: '🧭' })}
+        detail: deliveries.filter(d => d.status === 3).length + ' completed', icon: 'compass' })}
       ${statCard({ label: 'Sponsorships live', value: live.length,
-        detail: review.length + ' awaiting review', icon: '🤝' })}
+        detail: review.length + ' awaiting review', icon: 'handshake' })}
       ${statCard({ label: 'Pledged', value: inr(DB.sponsorships.reduce((n, s) => n + pledgedTotal(s), 0)),
-        detail: inr(DB.sponsorships.reduce((n, s) => n + paidTotal(s), 0)) + ' actually received', icon: '💰' })}
+        detail: inr(DB.sponsorships.reduce((n, s) => n + paidTotal(s), 0)) + ' actually received', icon: 'coins' })}
     </div>
 
     <h3 class="mt-6">Sponsorship requests awaiting review</h3>
@@ -184,7 +184,7 @@ function viewAdminTransport() {
       ? `<div class="listgrid">${review.map(s => sponsorshipCard(s, { forSponsor: true,
           actions: `<button class="btn btn-sm" data-act="approveSponsorship" data-id="${esc(s.id)}">Approve and list</button>
                     <button class="btn btn-2 btn-sm" data-act="declineSponsorship" data-id="${esc(s.id)}">Decline</button>` })).join('')}</div>`
-      : emptyState({ icon: '✅', title: 'Nothing to review', text: 'New sponsorship requests appear here first.' })}</div>
+      : emptyState({ icon: 'check', title: 'Nothing to review', text: 'New sponsorship requests appear here first.' })}</div>
 
     <h3 class="mt-6">Transporters</h3>
     <section class="card mt-3"><div class="tw"><table>

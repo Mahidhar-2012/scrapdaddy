@@ -47,10 +47,10 @@ const isPin = v => /^\d{6}$/.test(String(v || '').trim());
 
 /* ---------- domain constants ---------- */
 const CATS = {
-  metals:   { label: 'Metals',            short: 'Metals',    icon: '🔩', gst: 18, hsn: '7204–7404', co2: 2.6, kw: 'metal metals copper brass aluminium aluminum iron steel ferrous grill wiring scrap' },
-  plastics: { label: 'Plastics',          short: 'Plastics',  icon: '🧴', gst: 5,  hsn: '3915',      co2: 1.5, kw: 'plastic plastics pet hdpe pvc polythene bottle crate bucket drum' },
-  paper:    { label: 'Paper & cardboard', short: 'Paper',     icon: '📦', gst: 5,  hsn: '4707',      co2: 1.5, kw: 'paper cardboard newspaper book boxes corrugated kraft' },
-  ewaste:   { label: 'E-waste & appliances', short: 'E-waste', icon: '❄️', gst: 18, hsn: '8549',    co2: 3.0, kw: 'ewaste e-waste appliance appliances air conditioner refrigerator fridge electronics compressor' },
+  metals:   { label: 'Metals',            short: 'Metals',    icon: 'metals', gst: 18, hsn: '7204–7404', co2: 2.6, kw: 'metal metals copper brass aluminium aluminum iron steel ferrous grill wiring scrap' },
+  plastics: { label: 'Plastics',          short: 'Plastics',  icon: 'plastics', gst: 5,  hsn: '3915',      co2: 1.5, kw: 'plastic plastics pet hdpe pvc polythene bottle crate bucket drum' },
+  paper:    { label: 'Paper & cardboard', short: 'Paper',     icon: 'paper', gst: 5,  hsn: '4707',      co2: 1.5, kw: 'paper cardboard newspaper book boxes corrugated kraft' },
+  ewaste:   { label: 'E-waste & appliances', short: 'E-waste', icon: 'ewaste', gst: 18, hsn: '8549',    co2: 3.0, kw: 'ewaste e-waste appliance appliances air conditioner refrigerator fridge electronics compressor' },
 };
 const CAT_FILTERS = [['all', 'All'], ['metals', 'Metals'], ['plastics', 'Plastics'], ['paper', 'Paper'], ['ewaste', 'E-waste']];
 
@@ -118,27 +118,40 @@ const purposeLabel = id => (SPONSOR_PURPOSES.find(p => p[0] === id) || [, 'Other
 const SLOTS = ['Tomorrow, 10am–1pm', 'Tomorrow, 2pm–6pm', 'Saturday, 10am–1pm', 'Sunday, 10am–1pm'];
 
 /* ---------- placeholder imagery (inline SVG, no network) ---------- */
-function svgPhoto(emoji, c1, c2) {
+/* Placeholder artwork for a listing with no photograph. A quiet geometric
+   panel in the brand palette reads as "no image yet"; a cartoon face does not. */
+function svgPhoto(glyph, c1, c2) {
+  const paths = {
+    metals:   '<path d="M32 10 54 22v24L32 58 10 46V22z"/><path d="M32 24l11 6v12l-11 6-11-6V30z"/>',
+    plastics: '<path d="M26 8h12v7l4.5 5a9 9 0 0 1 2.3 6V52a4 4 0 0 1-4 4H23.2a4 4 0 0 1-4-4V26a9 9 0 0 1 2.3-6L26 15z"/><path d="M20 36h24"/>',
+    paper:    '<path d="M10 16h36a3 3 0 0 1 3 3v31a4 4 0 0 0 4 4H14a4 4 0 0 1-4-4z"/><path d="M49 25h5v29a4 4 0 0 1-4 4"/><path d="M18 26h20M18 34h20M18 42h12"/>',
+    ewaste:   '<rect x="13" y="13" width="38" height="38" rx="5"/><rect x="25" y="25" width="14" height="14" rx="2"/><path d="M25 7v6M39 7v6M25 51v6M39 51v6M7 25h6M7 39h6M51 25h6M51 39h6"/>',
+    box:      '<path d="M32 8 56 20v24L32 56 8 44V20z"/><path d="M8 20l24 12 24-12M32 32v24"/>',
+    bale:     '<rect x="10" y="18" width="44" height="30" rx="4"/><path d="M10 28h44M10 38h44M24 18v30M40 18v30"/>',
+  };
+  const d = paths[glyph] || paths.box;
   const s = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300">` +
-    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>` +
-    `<rect width="480" height="300" fill="url(#g)"/><circle cx="408" cy="52" r="68" fill="#fff" opacity=".3"/>` +
-    `<text x="240" y="192" font-size="124" text-anchor="middle">${emoji}</text></svg>`;
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>` +
+    `<rect width="480" height="300" fill="url(#g)"/>` +
+    `<g transform="translate(208 86) scale(1)" fill="none" stroke="#0F241B" stroke-opacity=".34" ` +
+    `stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
 }
 const PH = {
-  copper: svgPhoto('🔌', '#FEF3C7', '#FDE68A'),
-  ac:     svgPhoto('❄️', '#DBEAFE', '#BFDBFE'),
-  steel:  svgPhoto('🚪', '#E5E7EB', '#D1D5DB'),
-  pet:    svgPhoto('🧴', '#D1FAE5', '#A7F3D0'),
-  crates: svgPhoto('🧺', '#FFEDD5', '#FED7AA'),
-  paper:  svgPhoto('📰', '#FEF9C3', '#FEF08A'),
-  bale:   svgPhoto('🏗️', '#D1FAE5', '#86EFAC'),
-  fridge: svgPhoto('🧊', '#DBEAFE', '#BFDBFE'),
-  window: svgPhoto('🪟', '#E0F2FE', '#BAE6FD'),
-  tools:  svgPhoto('🔧', '#FEF3C7', '#FDE68A'),
-  poly:   svgPhoto('♻️', '#D1FAE5', '#86EFAC'),
+  copper: svgPhoto('metals',   '#E7F6EF', '#D6F0E3'),
+  ac:     svgPhoto('ewaste',   '#EDF4FA', '#DCE9F5'),
+  steel:  svgPhoto('metals',   '#EEF1EF', '#E2E8E4'),
+  pet:    svgPhoto('plastics', '#E7F6EF', '#D6F0E3'),
+  crates: svgPhoto('plastics', '#FEF0E6', '#FDDFC8'),
+  paper:  svgPhoto('paper',    '#FBF7E8', '#F5EDD2'),
+  bale:   svgPhoto('bale',     '#E7F6EF', '#C8E9D9'),
+  fridge: svgPhoto('ewaste',   '#EDF4FA', '#DCE9F5'),
+  window: svgPhoto('metals',   '#EDF4FA', '#DCE9F5'),
+  tools:  svgPhoto('metals',   '#FEF0E6', '#FDDFC8'),
+  poly:   svgPhoto('plastics', '#E7F6EF', '#C8E9D9'),
 };
-const catPhoto = cat => svgPhoto(CATS[cat].icon, '#ECFDF3', '#D3F5E0');
+const catPhoto = cat => svgPhoto(cat, '#E7F6EF', '#D6F0E3');
 
 /* ---------- demo account identifiers (seeded by auth.js) ---------- */
 const DEMO_USERS = {

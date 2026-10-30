@@ -1,6 +1,6 @@
 /* POST /api/chat
    Body: { messages: [{role,content}], context: {...} }
-   Groq chat completions for the ScrapDaddy help assistant. The context is the
+   Groq chat completions for the ScrapHub help assistant. The context is the
    caller's own summary of their session — it never contains another user's
    data, because the browser only ever builds it from the signed-in user. */
 'use strict';
@@ -12,7 +12,7 @@ const { take } = require('./_lib/ratelimit');
 const MAX_TURNS = 16;
 const MAX_CHARS = 1500;
 
-const SYSTEM = `You are the ScrapDaddy help assistant. ScrapDaddy is an Indian marketplace that connects
+const SYSTEM = `You are the ScrapHub help assistant. ScrapHub is an Indian marketplace that connects
 households, local scrap vendors (kabadiwalas) and recycling factories.
 
 What the product actually does today:

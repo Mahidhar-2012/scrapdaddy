@@ -1,5 +1,5 @@
 /* ===========================================================================
-   services.js — the only place the browser talks to the ScrapDaddy backend.
+   services.js — the only place the browser talks to the ScrapHub backend.
 
    API keys never reach this file. Every AI and payment call goes to our own
    server functions, which hold the credentials. If no backend is reachable the
@@ -51,7 +51,7 @@ const Api = {
       try { data = text ? JSON.parse(text) : null; } catch {
         // A static host answers unknown paths with an HTML 404 page.
         return { ok: false, status: res.status, error: res.status === 404
-          ? 'No ScrapDaddy backend is deployed at this address.'
+          ? 'No ScrapHub backend is deployed at this address.'
           : 'The server sent a response this app could not read.' };
       }
       if (!res.ok) {
@@ -60,7 +60,7 @@ const Api = {
       return { ok: true, status: res.status, data };
     } catch (e) {
       if (e.name === 'AbortError') return { ok: false, status: 0, error: 'The request timed out. Please try again.' };
-      return { ok: false, status: 0, error: 'Could not reach the ScrapDaddy backend.' };
+      return { ok: false, status: 0, error: 'Could not reach the ScrapHub backend.' };
     } finally {
       clearTimeout(timer);
     }

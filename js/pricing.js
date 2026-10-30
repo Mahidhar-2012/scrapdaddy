@@ -127,7 +127,7 @@ const Pricing = {
     if (ov) {
       return {
         available: true, price: ov.price, unit, region: reg, inherited: false,
-        source: { name: 'ScrapDaddy administrator', type: 'indicative', url: null,
+        source: { name: 'ScrapHub administrator', type: 'indicative', url: null,
                   note: 'Set in the admin console by ' + ov.by + '.' },
         type: 'indicative', updatedAt: Date.parse(ov.updatedAt) || null,
         freshness: this._freshness(Date.parse(ov.updatedAt) || null),

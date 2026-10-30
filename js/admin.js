@@ -41,29 +41,29 @@ function viewAdminOverview() {
     return { label: CATS[c].short, value: v, display: v ? num(v) : '0', highlight: v > 0 };
   });
   return `${notice(`Figures below are computed from the records in this browser, including the seeded sample data.
-      They are not production metrics.`, 'amber', '⚠️')}
+      They are not production metrics.`, 'amber', 'alert')}
     <div class="stats mt-4">
-      ${statCard({ label: 'Transaction value', value: inr(gmv), detail: rows.length + ' transaction' + (rows.length === 1 ? '' : 's'), icon: '💰' })}
-      ${statCard({ label: 'Material collected', value: num(kg) + ' kg', detail: 'Weighed on a scale', icon: '⚖️' })}
-      ${statCard({ label: 'Accounts', value: users.length, detail: users.filter(u => u.role === 'vendor').length + ' vendor, ' + users.filter(u => u.role === 'household').length + ' household', icon: '👥' })}
-      ${statCard({ label: 'CO₂ saved', value: num(co2) + ' kg', detail: 'Across completed pickups', icon: '🌱' })}
+      ${statCard({ label: 'Transaction value', value: inr(gmv), detail: rows.length + ' transaction' + (rows.length === 1 ? '' : 's'), icon: 'coins' })}
+      ${statCard({ label: 'Material collected', value: num(kg) + ' kg', detail: 'Weighed on a scale', icon: 'scale' })}
+      ${statCard({ label: 'Accounts', value: users.length, detail: users.filter(u => u.role === 'vendor').length + ' vendor, ' + users.filter(u => u.role === 'household').length + ' household', icon: 'users' })}
+      ${statCard({ label: 'CO₂ saved', value: num(co2) + ' kg', detail: 'Across completed pickups', icon: 'leaf' })}
     </div>
     <div class="split even mt-6">
       <section class="card"><div class="card-h"><h3>Collected by category</h3><span class="t-xs muted">kilograms</span></div>
-        <div class="card-b">${kg ? barChart(byCat) : emptyState({ icon: '📊', title: 'No completed pickups', text: 'Weighed pickups will be charted here.' })}</div></section>
+        <div class="card-b">${kg ? barChart(byCat) : emptyState({ icon: 'dashboard', title: 'No completed pickups', text: 'Weighed pickups will be charted here.' })}</div></section>
       <section class="card"><div class="card-h"><h3>Vendors awaiting approval</h3>
         <a class="btn btn-2 btn-sm" href="#/admin/vendors">Manage</a></div>
         <div class="card-b">${pending.length ? pending.map(v => `<div class="kv">
             <span class="k">${esc(v.name)} · <span class="muted">${esc(v.hub)}</span></span>
             <span class="v"><button class="btn btn-sm" data-act="approveVendor" data-id="${esc(v.id)}">Approve</button></span></div>`).join('')
-          : emptyState({ icon: '✅', title: 'All clear', text: 'No vendor is waiting for verification.' })}</div></section>
+          : emptyState({ icon: 'check', title: 'All clear', text: 'No vendor is waiting for verification.' })}</div></section>
     </div>`;
 }
 
 function adminLedgerHtml() {
   const f = filtersFor('admin');
   const rows = filterItems(ledgerRows().map(r => Object.assign({ desc: r.parties }, r)), f);
-  if (!rows.length) return emptyState({ icon: '🧾', title: 'No transactions match', text: 'Adjust the search or filters.' });
+  if (!rows.length) return emptyState({ icon: 'receipt', title: 'No transactions match', text: 'Adjust the search or filters.' });
   return resultCount(rows.length, 'transaction') + `<section class="card"><div class="tw"><table>
     <thead><tr><th>Ref</th><th>Material</th><th class="n">Weight</th><th>Parties</th><th class="n">Value</th><th>Escrow</th><th>Status</th></tr></thead>
     <tbody>${rows.map(r => {
@@ -96,8 +96,8 @@ function viewAdminVendors() {
         <td class="strong">${esc(v.name)}${v.sample === false ? ' ' + badge('new') : ''}
           <div class="t-xs muted">${esc(v.id)}${v.userId ? ' · has login' : ' · no login'}</div></td>
         <td class="muted">${esc(v.hub)}</td>
-        <td><button class="btn btn-ghost btn-sm" data-act="toggleKyc" data-id="${esc(v.id)}">${v.kycVerified ? '✅ Verified' : '⏳ Pending'}</button></td>
-        <td><button class="btn btn-ghost btn-sm" data-act="toggleScale" data-id="${esc(v.id)}">${v.scaleVerified ? '✅ Calibrated' : '⏳ Pending'}</button></td>
+        <td><button class="btn btn-ghost btn-sm" data-act="toggleKyc" data-id="${esc(v.id)}">${v.kycVerified ? `${ico('check')} Verified` : '⏳ Pending'}</button></td>
+        <td><button class="btn btn-ghost btn-sm" data-act="toggleScale" data-id="${esc(v.id)}">${v.scaleVerified ? `${ico('check')} Calibrated` : '⏳ Pending'}</button></td>
         <td>${badge(v.status === 'approved' ? 'Approved' : 'Pending', v.status === 'approved' ? 'brand' : 'amber')}</td>
         <td class="n nowrap">${v.status === 'approved'
           ? `<button class="btn btn-2 btn-sm" data-act="suspendVendor" data-id="${esc(v.id)}">Suspend</button>`
@@ -111,7 +111,7 @@ function viewAdminAccounts() {
   const me = Auth.user();
   const users = Auth.provider.listUsers().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   return `${notice(`Role changes take effect the next time that person loads a page. An administrator cannot change
-      their own role or suspend their own account, and self-service sign-up never offers the administrator role.`, 'info', 'ℹ️')}
+      their own role or suspend their own account, and self-service sign-up never offers the administrator role.`, 'info', 'info')}
     <section class="card mt-4"><div class="card-h"><h3>Accounts</h3><span class="t-xs muted">${users.length} total</span></div>
     <div class="tw"><table>
       <thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr></thead>
@@ -152,10 +152,10 @@ function viewAdminRates() {
       <div class="card-b">
         ${Pricing.status === 'error'
           ? notice(`<strong>data/prices.json could not be loaded</strong> (${esc(Pricing.error || '')}). The app is running on
-             its built-in fallback rates. Anything you save here is stored as an override in this browser.`, 'danger', '⚠️')
+             its built-in fallback rates. Anything you save here is stored as an override in this browser.`, 'danger', 'alert')
           : notice(`The price book lives in <code>data/prices.json</code> and can be edited there without touching any code.
              Changes you make here are saved as <strong>overrides for ${esc(Pricing.regionLabel())}</strong>, recorded with
-             your name and the time, and they take precedence over the file.`, 'info', 'ℹ️')}
+             your name and the time, and they take precedence over the file.`, 'info', 'info')}
         <div class="tw mt-4"><table>
           <thead><tr><th>Material</th><th class="n">Price</th><th>Source in force</th><th>Updated</th><th></th></tr></thead>
           <tbody>${Pricing.all(region).map(p => {
@@ -182,7 +182,7 @@ function viewAdminRates() {
           <td class="n">${g.n}</td><td class="n">${num(g.kg)} kg</td><td class="n">${inr(g.taxable)}</td><td class="n">${inr(g.tax)}</td>
           <td class="t-sm muted">${g.gst === 18 ? 'Reverse charge on unregistered purchase' : 'Forward charge'}</td></tr>`).join('')}
         </tbody></table></div>`
-        : `<div class="card-b">${emptyState({ icon: '🧾', title: 'No orders recorded', text: 'Tax summaries appear once a factory places an order.' })}</div>`}
+        : `<div class="card-b">${emptyState({ icon: 'receipt', title: 'No orders recorded', text: 'Tax summaries appear once a factory places an order.' })}</div>`}
       <div class="card-f t-xs muted">Indicative only — metals and e-waste are treated at 18%, paper and plastics at 5%. Not tax advice.</div>
     </section>`;
 }

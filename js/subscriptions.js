@@ -12,7 +12,7 @@
 const PLANS = [
   {
     id: 'free', name: 'Starter', price: 0, period: 'month', badge: null,
-    tagline: 'For collectors getting started on ScrapDaddy.',
+    tagline: 'For collectors getting started on ScrapHub.',
     entitlements: { jobsPerMonth: 10, canPublishLots: false, maxOpenPickups: 3, priorityPlacement: false, analytics: false },
     features: [
       'Up to 10 accepted pickups a month',

@@ -1,27 +1,34 @@
-/* ===========================================================================
-   ScrapDaddy design system — light only, brand green, restrained neutrals.
-   Tokens → primitives → layout → components → views → responsive.
-   ========================================================================= */
 :root{
-  /* surfaces & ink */
-  --bg:#F6F8F7; --surface:#FFFFFF; --surface-2:#F1F5F2; --surface-3:#E8EEEA;
-  --border:#E2EAE5; --border-strong:#CBD8D0;
-  /* ink-3 is the brief's "muted olive slate"; it clears 4.5:1 on our surfaces
-     where the lighter grey-green we started with did not */
-  --ink:#0E1A13; --ink-2:#3C5248; --ink-3:#4B6354;
-  /* brand */
-  --brand:#16A34A; --brand-600:#15803D; --brand-700:#126C34; --brand-50:#ECFDF3; --brand-100:#D3F5E0;
+  /* ---------------------------------------------------------------------
+     Palette taken from the ScrapHub logo.
+     The logo's mint (#6CC79C) and orange (#FA6E16) are too light to carry
+     white text — 2.0:1 and 2.9:1 — so they are used as fills, tints and
+     illustration, while darker siblings do the work on interactive surfaces.
+     Every pairing below was measured, not guessed.
+     --------------------------------------------------------------------- */
+  /* surfaces */
+  --bg:#F7F9F6; --surface:#FFFFFF; --surface-2:#F1F5F1; --surface-3:#E6EDE8;
+  --border:#E1E9E3; --border-strong:#C9D7CE;
+  /* ink */
+  --ink:#0F241B; --ink-2:#3F5A4B; --ink-3:#4B6354;
+  /* brand: logo mint, plus deeper siblings for anything bearing white text */
+  --mint:#6CC79C; --brand:#6CC79C;
+  --brand-600:#1E7D56; --brand-700:#17704C; --brand-800:#0F6342;
+  --brand-50:#E7F6EF; --brand-100:#D6F0E3;
+  /* accent: logo orange */
+  --accent:#FA6E16; --accent-700:#AD4A09; --accent-800:#993F07;
+  --accent-50:#FEF0E6; --accent-100:#FDDFC8;
   /* status */
-  --amber:#B45309; --amber-50:#FEF8E7; --amber-200:#F6E2A8;
-  --danger:#C62828; --danger-50:#FDF2F2; --danger-200:#F3C9C9;
-  --info:#15607A; --info-50:#EFF8FB; --info-200:#BFE0EA;
-  /* shape & depth */
+  --amber:#8A5A00; --amber-50:#FDF6E3; --amber-200:#F0DCA8;
+  --danger:#B3261E; --danger-50:#FDF1F0; --danger-200:#F0C8C5;
+  --info:#15607A; --info-50:#EDF7FA; --info-200:#BBDDE8;
+  /* shape and depth */
   --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:22px;
-  --sh-sm:0 1px 2px rgba(14,26,19,.05);
-  --sh:0 1px 3px rgba(14,26,19,.06), 0 6px 16px -8px rgba(14,26,19,.10);
-  --sh-lg:0 12px 32px -12px rgba(14,26,19,.20);
-  --ring:0 0 0 3px rgba(22,163,74,.28);
-  --sidebar:248px; --topbar:62px;
+  --sh-sm:0 1px 2px rgba(15,36,27,.05);
+  --sh:0 1px 3px rgba(15,36,27,.06), 0 6px 16px -8px rgba(15,36,27,.10);
+  --sh-lg:0 12px 32px -12px rgba(15,36,27,.20);
+  --ring:0 0 0 3px rgba(30,125,86,.25);
+  --sidebar:252px; --topbar:64px;
   --ff:'Plus Jakarta Sans','Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
 }
 *{box-sizing:border-box}
@@ -58,19 +65,19 @@ svg{display:block}
 /* ---------- boot / spinner ---------- */
 .boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:90}
 .boot-in{text-align:center;color:var(--ink-3);font-size:13.5px}
-.boot-logo{font-size:40px;margin-bottom:12px}
+.boot-logo{display:block;margin:0 auto 14px;object-fit:contain}
 .spinner{width:22px;height:22px;margin:0 auto 10px;border:2.5px solid var(--brand-100);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
 .spinner.sm{width:15px;height:15px;border-width:2px;display:inline-block;margin:0;vertical-align:-2px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- buttons ---------- */
-/* Filled buttons use brand-600 rather than brand: white on #16A34A is only
-   3.3:1, while #15803D reaches 5.0:1. Same palette, accessible pairing. */
+/* Filled buttons use brand-600 rather than brand: white on var(--mint) is only
+   3.3:1, while var(--brand-700) reaches 5.0:1. Same palette, accessible pairing. */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;
   background:var(--brand-600);color:#fff;padding:0 16px;height:40px;border-radius:var(--r-sm);
   font-weight:600;font-size:14px;white-space:nowrap;transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
 .btn:hover{background:var(--brand-700)}
-.btn:active{background:#0F5A2B}
+.btn:active{background:var(--brand-800)}
 .btn:focus-visible{box-shadow:var(--ring);outline:none}
 .btn-2{background:var(--surface);color:var(--ink);border-color:var(--border-strong)}
 .btn-2:hover{background:var(--surface-2);border-color:var(--ink-3)}
@@ -185,7 +192,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 /* bottom padding keeps content clear of the floating assistant button */
 #view{flex:1;padding:24px 24px 96px;max-width:1240px;width:100%;margin:0 auto}
 #view:focus{outline:none}
-.scrim{position:fixed;inset:0;background:rgba(14,26,19,.4);z-index:35;animation:fade .2s}
+.scrim{position:fixed;inset:0;background:rgba(15,36,27,.4);z-index:35;animation:fade .2s}
 body.is-auth .main{margin-left:0}
 body.is-auth #view{padding:0;max-width:none}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -202,7 +209,7 @@ body.is-auth #view{padding:0;max-width:none}
 
 /* ---------- auth screens ---------- */
 .auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
-.auth-art{background:linear-gradient(160deg,#0F3D27 0%,#15803D 55%,#1FA557 100%);color:#fff;padding:46px 48px;
+.auth-art{background:linear-gradient(160deg,#0F3D27 0%,var(--brand-700) 55%,#1FA557 100%);color:#fff;padding:46px 48px;
   display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
 .auth-art .glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.17),transparent 62%);top:-170px;right:-150px}
 .auth-art .bl{position:relative;z-index:1}
@@ -312,7 +319,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .shot .rm{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.95)}
 
 /* modal */
-.modal{position:fixed;inset:0;background:rgba(14,26,19,.42);z-index:60;display:grid;place-items:center;padding:16px;overflow-y:auto;animation:fade .15s}
+.modal{position:fixed;inset:0;background:rgba(15,36,27,.42);z-index:60;display:grid;place-items:center;padding:16px;overflow-y:auto;animation:fade .15s}
 .modal .box{background:var(--surface);border-radius:var(--r-lg);width:100%;max-width:520px;box-shadow:var(--sh-lg);animation:pop .2s;max-height:92vh;display:flex;flex-direction:column}
 .modal .box.wide{max-width:660px}
 @keyframes pop{from{transform:translateY(10px) scale(.985);opacity:0}to{transform:none;opacity:1}}
@@ -325,7 +332,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .toast{background:var(--ink);color:#fff;border-radius:var(--r);padding:12px 15px;box-shadow:var(--sh-lg);
   font-size:13.5px;font-weight:500;display:flex;gap:10px;align-items:flex-start;animation:slide .22s}
 .toast .ti{flex:none}
-.toast.ok .ti{color:#6EE7A2}.toast.warn .ti{color:#FBBF24}.toast.err .ti{color:#FCA5A5}
+.toast.ok .ti{color:var(--mint)}.toast.warn .ti{color:#FBBF24}.toast.err .ti{color:#FCA5A5}
 @keyframes slide{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
 
 /* scale readout */
@@ -364,7 +371,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 /* ---------- chat assistant ---------- */
 #chatRoot{position:fixed;right:20px;bottom:20px;z-index:55}
 .chat-fab{display:flex;align-items:center;gap:8px;height:50px;padding:0 19px;border:0;border-radius:999px;
-  background:var(--brand-600);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 22px -6px rgba(21,128,61,.55);
+  background:var(--brand-600);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 22px -6px rgba(23,112,76,.45);
   transition:transform .18s,background .18s}
 .chat-fab:hover{background:var(--brand-700);transform:translateY(-2px)}
 .chat-fab .ic{font-size:19px}
@@ -438,3 +445,31 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 @media print{.sidebar,.topbar,.toasts,.demobar{display:none}.main{margin:0}}
+
+
+/* ---------- icons ---------- */
+/* Line icons inherit colour and sit on the text baseline, so an icon always
+   matches the label beside it. */
+.ico{display:inline-block;vertical-align:-0.18em;flex:none}
+.ico-lg{width:24px;height:24px}
+.row .ico,.btn .ico,.chip .ico,.badge .ico{flex:none}
+.btn .ico{margin-right:-2px}
+.badge .ico{width:13px;height:13px;vertical-align:-0.15em}
+.stat .k .ico{width:15px;height:15px;color:var(--ink-3)}
+.sb-nav a .ico{width:18px;height:18px}
+.notice .ni .ico{width:17px;height:17px}
+.empty .e .ico{width:30px;height:30px;color:var(--border-strong);stroke-width:1.4}
+.scan-sec-h .ico{width:14px;height:14px;vertical-align:-0.14em;margin-right:3px}
+.icon-tile{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;
+  background:var(--brand-50);color:var(--brand-700)}
+.icon-tile.accent{background:var(--accent-50);color:var(--accent-700)}
+.icon-tile.info{background:var(--info-50);color:var(--info)}
+.icon-tile.neutral{background:var(--surface-2);color:var(--ink-2)}
+
+/* ---------- brand lockup ---------- */
+.brand-lockup{display:inline-flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em}
+.brand-mark{display:block;object-fit:contain}
+.brand-word{font-size:17px;color:var(--ink)}
+.brand-word b{color:var(--brand-700);font-weight:800}
+.auth-art .brand-word{color:#fff}
+.auth-art .brand-word b{color:var(--mint)}

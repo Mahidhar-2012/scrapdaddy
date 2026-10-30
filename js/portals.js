@@ -55,10 +55,10 @@ function viewHouseholdOverview() {
   const recent = mine.slice().sort((a, b) => (b.created || 0) - (a.created || 0)).slice(0, 5);
   return `
     <div class="stats">
-      ${statCard({ label: 'Paid to you', value: inr(earned), detail: sold.length + ' completed pickup' + (sold.length === 1 ? '' : 's'), icon: '💰' })}
-      ${statCard({ label: 'Open listings', value: open.length, detail: open.length ? 'Waiting for a vendor' : 'Nothing listed right now', icon: '📋' })}
-      ${statCard({ label: 'In progress', value: live.length, detail: 'Scheduled or being weighed', icon: '🛺' })}
-      ${statCard({ label: 'CO₂ saved', value: num(co2) + ' kg', detail: 'From material you recycled', icon: '🌱' })}
+      ${statCard({ label: 'Paid to you', value: inr(earned), detail: sold.length + ' completed pickup' + (sold.length === 1 ? '' : 's'), icon: 'coins' })}
+      ${statCard({ label: 'Open listings', value: open.length, detail: open.length ? 'Waiting for a vendor' : 'Nothing listed right now', icon: 'clipboard' })}
+      ${statCard({ label: 'In progress', value: live.length, detail: 'Scheduled or being weighed', icon: 'truck' })}
+      ${statCard({ label: 'CO₂ saved', value: num(co2) + ' kg', detail: 'From material you recycled', icon: 'leaf' })}
     </div>
     <div class="split mt-6">
       <section class="card">
@@ -72,7 +72,7 @@ function viewHouseholdOverview() {
             <td>${badge(STAGES[l.stage], l.stage >= 2 ? 'brand' : l.stage === 1 ? 'info' : null)}</td>
             <td class="n nowrap">${inr(l.finalPrice || l.ask)}</td></tr>`).join('')}
         </tbody></table></div>` : emptyState({
-          icon: '📸', title: 'No listings yet',
+          icon: 'camera', title: 'No listings yet',
           text: 'Photograph your scrap, check the rate and book a free pickup.',
           action: '<a class="btn" href="#/household/sell">Sell scrap</a>',
         })}
@@ -101,7 +101,7 @@ function photoBlock() {
   const f = View.form;
   if (!f.photo) {
     return `<label class="drop" for="photoInput">
-        <div class="e">📷</div><div class="t">Add a photo</div>
+        <div class="e">${ico('camera')}</div><div class="t">Add a photo</div>
         <div class="h">Click to upload, drag a file here, or use your camera</div>
         <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" hidden>
       </label>
@@ -111,11 +111,11 @@ function photoBlock() {
   if (View.scanReady === false) {
     action = `<div class="mt-3">${notice(`<strong>Photo analysis is not switched on.</strong><br>
       ${esc(View.scanReason || 'No analysis service is configured for this deployment.')}
-      You can still fill the form in yourself.`, 'amber', 'ℹ️')}</div>`;
+      You can still fill the form in yourself.`, 'amber', 'info')}</div>`;
   } else {
     action = `<button class="btn btn-2 btn-block mt-3" data-act="scan" ${View.scanBusy || View.scanReady === null ? 'disabled' : ''}>
         ${View.scanBusy ? '<span class="spinner sm"></span> Looking at your photo…'
-          : View.scanReady === null ? '<span class="spinner sm"></span> Checking…' : '🔍 Analyse this photo'}</button>
+          : View.scanReady === null ? '<span class="spinner sm"></span> Checking…' : `${ico('search')} Analyse this photo`}</button>
       <p class="t-xs muted mt-2">Describes what is visible and suggests a category. It cannot judge weight, purity or grade
         from a picture, and it can be wrong — always check the fields before publishing.</p>`;
   }
@@ -169,15 +169,15 @@ function scanReportHtml() {
       </div>
       ${r.summary ? `<p class="mt-3">${esc(r.summary)}</p>` : ''}
       ${r.confidenceReason ? `<p class="t-sm muted mt-2">${esc(r.confidenceReason)}</p>` : ''}
-      ${qualityHint ? `<div class="mt-3">${notice(esc(qualityHint) + ' <button class="btn-link" data-act="rmPhoto">Try another photo</button>', 'amber', '📷')}</div>` : ''}
+      ${qualityHint ? `<div class="mt-3">${notice(esc(qualityHint) + ' <button class="btn-link" data-act="rmPhoto">Try another photo</button>', 'amber', 'camera')}</div>` : ''}
       ${valueBlock}
-      ${r.condition ? `<div class="scan-sec"><div class="scan-sec-h">🔎 Condition</div><p class="t-sm">${esc(r.condition)}</p></div>` : ''}
-      ${list('Visible items', r.visibleItems, '📦')}
-      ${list('Contamination to expect', r.contamination, '⚠️')}
-      ${r.quantityAssessment ? `<div class="scan-sec"><div class="scan-sec-h">⚖️ Quantity</div><p class="t-sm">${esc(r.quantityAssessment)}</p></div>` : ''}
-      ${list('Safety', r.safetyNotes, '🧤')}
-      ${list('What this photo cannot tell us', r.limitations, '🚫')}
-      ${list('Would help to know', r.needFromUser, '❓')}
+      ${r.condition ? `<div class="scan-sec"><div class="scan-sec-h">${ico('search')} Condition</div><p class="t-sm">${esc(r.condition)}</p></div>` : ''}
+      ${list('Visible items', r.visibleItems, 'box')}
+      ${list('Contamination to expect', r.contamination, 'alert')}
+      ${r.quantityAssessment ? `<div class="scan-sec"><div class="scan-sec-h">${ico('scale')} Quantity</div><p class="t-sm">${esc(r.quantityAssessment)}</p></div>` : ''}
+      ${list('Safety', r.safetyNotes, 'shield')}
+      ${list('What this photo cannot tell us', r.limitations, 'ban')}
+      ${list('Would help to know', r.needFromUser, 'help')}
     </div>
     <div class="card-f t-xs muted">
       ${View.scanModel ? 'Analysed by ' + esc(View.scanModel) + '. ' : ''}Fields on the right were filled in from this —
@@ -198,7 +198,7 @@ function sellForm() {
       <h3>1. Photo</h3>
       <p class="t-sm muted" style="margin:4px 0 14px">A clear, well-lit photo helps the vendor quote accurately.</p>
       <div id="photoBlock">${photoBlock()}</div>
-      ${View.scanError ? `<div class="mt-3">${notice(esc(View.scanError), 'danger', '⚠️')}</div>` : ''}
+      ${View.scanError ? `<div class="mt-3">${notice(esc(View.scanError), 'danger', 'alert')}</div>` : ''}
       ${scanReportHtml()}
     </section>
     <section class="card card-p">
@@ -276,8 +276,8 @@ function householdListingsHtml() {
   const items = filterItems(myListings(), f).sort((a, b) => (b.created || 0) - (a.created || 0));
   if (!items.length) {
     return myListings().length
-      ? emptyState({ icon: '🔍', title: 'No matches', text: 'No listing matches your search. Try clearing the filters.' })
-      : emptyState({ icon: '📋', title: 'Nothing listed yet', text: 'Your listings and their pickup status will appear here.',
+      ? emptyState({ icon: 'search', title: 'No matches', text: 'No listing matches your search. Try clearing the filters.' })
+      : emptyState({ icon: 'clipboard', title: 'Nothing listed yet', text: 'Your listings and their pickup status will appear here.',
           action: '<a class="btn" href="#/household/sell">Sell scrap</a>' });
   }
   return resultCount(items.length, 'listing') + `<div class="listgrid">${items.map(l => {
@@ -421,7 +421,7 @@ function redrawSell() {
    ========================================================================= */
 function vendorPendingNotice(v) {
   return notice(`<strong>Account pending verification.</strong> You can browse the jobs board, but accepting pickups
-    unlocks once an administrator verifies your ID and weighing scale.`, 'amber', '⏳');
+    unlocks once an administrator verifies your ID and weighing scale.`, 'amber', 'hourglass');
 }
 function viewVendorOverview() {
   const v = myVendor();
@@ -436,19 +436,19 @@ function viewVendorOverview() {
   byCat.forEach(r => { r.display = r.value ? num(r.value) : '0'; r.highlight = r.value > 0; });
   return `${vendorApproved(v) ? '' : vendorPendingNotice(v) + '<div class="mt-4"></div>'}
     <div class="stats">
-      ${statCard({ label: 'Open jobs', value: open, detail: 'On the board right now', icon: '🔍' })}
-      ${statCard({ label: 'Active pickups', value: active.length, detail: 'Scheduled, weighing or at hub', icon: '🛺' })}
-      ${statCard({ label: 'Hub inventory', value: num(hubKg) + ' kg', detail: inHub.length + ' lot' + (inHub.length === 1 ? '' : 's') + ' not yet sold', icon: '🏗️' })}
-      ${statCard({ label: 'Published lots', value: DB.lots.filter(l => l.vendor === v.id).length, detail: 'Listed for factories', icon: '🏭' })}
+      ${statCard({ label: 'Open jobs', value: open, detail: 'On the board right now', icon: 'search' })}
+      ${statCard({ label: 'Active pickups', value: active.length, detail: 'Scheduled, weighing or at hub', icon: 'truck' })}
+      ${statCard({ label: 'Hub inventory', value: num(hubKg) + ' kg', detail: inHub.length + ' lot' + (inHub.length === 1 ? '' : 's') + ' not yet sold', icon: 'warehouse' })}
+      ${statCard({ label: 'Published lots', value: DB.lots.filter(l => l.vendor === v.id).length, detail: 'Listed for factories', icon: 'factory' })}
     </div>
     <div class="split even mt-6">
       <section class="card"><div class="card-h"><h3>Hub inventory by category</h3><span class="t-xs muted">kilograms</span></div>
-        <div class="card-b">${hubKg ? barChart(byCat) : emptyState({ icon: '🏗️', title: 'Hub is empty', text: 'Weighed pickups you add to the hub appear here.' })}</div></section>
+        <div class="card-b">${hubKg ? barChart(byCat) : emptyState({ icon: 'warehouse', title: 'Hub is empty', text: 'Weighed pickups you add to the hub appear here.' })}</div></section>
       <section class="card"><div class="card-h"><h3>Next actions</h3><a class="btn btn-2 btn-sm" href="#/vendor/pickups">My pickups</a></div>
         <div class="card-b">${active.length ? active.slice(0, 5).map(l => `<div class="kv">
             <span class="k trunc" style="max-width:60%">${esc(l.title)}</span>
             <span class="v">${badge(STAGES[l.stage], l.stage === 1 ? 'amber' : 'info')}</span></div>`).join('')
-          : emptyState({ icon: '✅', title: 'Nothing pending', text: 'Accept a job from the board to get started.', action: '<a class="btn" href="#/vendor/find">Open jobs board</a>' })}</div></section>
+          : emptyState({ icon: 'check', title: 'Nothing pending', text: 'Accept a job from the board to get started.', action: '<a class="btn" href="#/vendor/find">Open jobs board</a>' })}</div></section>
     </div>`;
 }
 
@@ -456,12 +456,12 @@ function vendorJobsHtml() {
   const v = myVendor();
   const f = filtersFor('vendor');
   const items = filterItems(DB.listings.filter(l => l.stage === 0), f);
-  if (!items.length) return emptyState({ icon: '🔍', title: 'No open jobs match', text: 'Try a different material or widen the area filter.' });
+  if (!items.length) return emptyState({ icon: 'search', title: 'No open jobs match', text: 'Try a different material or widen the area filter.' });
   return resultCount(items.length, 'job') + `<div class="listgrid">${items.map(l => {
     const bids = l.bids || [];
     const mine = bids.find(b => b.vendor === v.id);
     const top = bids.length ? Math.max.apply(null, bids.map(b => b.amount)) : 0;
-    const extra = `<div class="t-xs muted">📞 ${esc(maskPhone(l.phone))} · contact stays masked${
+    const extra = `<div class="t-xs muted">${ico('phone')} ${esc(maskPhone(l.phone))} · contact stays masked${
       bids.length ? ` · ${bids.length} bid${bids.length === 1 ? '' : 's'}, top ${inr(top)}` : ''}</div>`;
     const can = vendorApproved(v);
     const actions = l.mode === 'bid'
@@ -487,12 +487,12 @@ function viewVendorFind() {
 function viewVendorPickups() {
   const v = myVendor();
   const mine = DB.listings.filter(l => l.vendor === v.id && l.stage >= 1 && l.stage <= 3);
-  if (!mine.length) return emptyState({ icon: '🛺', title: 'No active pickups',
+  if (!mine.length) return emptyState({ icon: 'truck', title: 'No active pickups',
     text: 'Jobs you accept appear here with weighing and hub steps.', action: '<a class="btn" href="#/vendor/find">Open jobs board</a>' });
   return `<div class="listgrid">${mine.map(l => {
-    const extra = `${trackBar(l.stage)}<div class="t-xs muted">🕒 ${esc(l.slot)} · 📞 ${esc(maskPhone(l.phone))}</div>`;
+    const extra = `${trackBar(l.stage)}<div class="t-xs muted">${ico('clock')} ${esc(l.slot)} · ${ico('phone')} ${esc(maskPhone(l.phone))}</div>`;
     let actions = `<button class="btn btn-2 btn-sm" data-act="call" data-id="${l.id}">Masked call</button>`;
-    if (l.stage === 1) actions += `<button class="btn btn-sm" data-act="weigh" data-id="${l.id}">⚖️ Weigh and pay</button>`;
+    if (l.stage === 1) actions += `<button class="btn btn-sm" data-act="weigh" data-id="${l.id}">${ico('scale')} Weigh and pay</button>`;
     else if (l.stage === 2) actions += `<button class="btn btn-sm" data-act="toHub" data-id="${l.id}">Add to hub</button>`;
     else actions += `<span class="badge badge-brand">In hub inventory</span>`;
     return listingCard(l, { extra, actions });
@@ -521,14 +521,14 @@ function viewVendorHub() {
               ${kg < MIN_LOT ? `Needs ${num(MIN_LOT - kg)} kg more` : 'Bale and publish'}</button></td></tr>`;
         }).join('')}</tbody></table></div>
         <div class="card-f t-xs muted">Demo threshold is ${MIN_LOT} kg so the flow can be tried quickly. Real factory lots are 5–15 tonnes.</div>`
-        : `<div class="card-b">${emptyState({ icon: '🏗️', title: 'Hub is empty', text: 'Weigh a pickup and add it to the hub to build a factory lot.' })}</div>`}
+        : `<div class="card-b">${emptyState({ icon: 'warehouse', title: 'Hub is empty', text: 'Weigh a pickup and add it to the hub to build a factory lot.' })}</div>`}
     </section>
     <h3 class="mt-6">Published lots</h3>
     <p class="t-sm muted mt-2">Listed on the factory marketplace.</p>
     <div class="mt-3">${lots.length ? `<div class="listgrid">${lots.map(l => listingCard(l, {
       extra: `<div class="t-xs muted">HSN ${esc(l.hsn)} · ${num(l.kg / 1000)} tonnes</div>`,
       actions: l.stage === 4 ? badge('Sold to factory', 'brand') : badge('Live on marketplace', 'info'),
-    })).join('')}</div>` : emptyState({ icon: '📦', title: 'No lots published yet', text: 'Bale hub inventory into a lot to offer it to factories.' })}</div>`;
+    })).join('')}</div>` : emptyState({ icon: 'box', title: 'No lots published yet', text: 'Bale hub inventory into a lot to offer it to factories.' })}</div>`;
 }
 
 /* ---------- vendor actions ---------- */
@@ -587,7 +587,7 @@ A.weigh = async d => {
     title: 'Digital scale',
     body: `<p class="lead">${esc(l.title)}</p>
       <div class="readout mt-3"><div class="st"><span class="spinner sm"></span> Pairing…</div><div class="w" id="scaleW">— kg</div></div>
-      <div class="mt-3">${notice('Demo simulation — no scale is connected. A real deployment pairs a Bluetooth scale so the weight cannot be edited by hand.', 'amber', '⚠️')}</div>`,
+      <div class="mt-3">${notice('Demo simulation — no scale is connected. A real deployment pairs a Bluetooth scale so the weight cannot be edited by hand.', 'amber', 'alert')}</div>`,
     footer: `<button class="btn btn-2" data-act="modalClose">Cancel</button>
              <button class="btn" id="scaleOk" data-act="weighConfirm" data-id="${l.id}" disabled>Confirm weight</button>`,
   });
@@ -597,7 +597,7 @@ A.weigh = async d => {
   View.pendingWeight = w;
   const wEl = $('#scaleW'), stEl = $('#modal .st'), ok = $('#scaleOk');
   if (wEl) wEl.textContent = w + ' kg';
-  if (stEl) stEl.innerHTML = '✓ Reading locked';
+  if (stEl) stEl.innerHTML = `${ico('check')} Reading locked`;
   if (ok) { ok.disabled = false; ok.focus(); }
 };
 A.weighConfirm = d => {
@@ -655,10 +655,10 @@ function viewFactoryOverview() {
     return { label: CATS[c].short, value: v, display: v ? num(v / 1000) + 't' : '0', highlight: v > 0 };
   });
   return `<div class="stats">
-      ${statCard({ label: 'Lots available', value: avail.length, detail: num(avail.reduce((s, l) => s + l.kg, 0) / 1000) + ' tonnes on offer', icon: '🏭' })}
-      ${statCard({ label: 'Your orders', value: orders.length, detail: 'Placed through ScrapDaddy', icon: '📦' })}
-      ${statCard({ label: 'Tonnage bought', value: num(kg / 1000) + ' t', detail: 'Across all orders', icon: '⚖️' })}
-      ${statCard({ label: 'Order value', value: inr(spend), detail: 'Taxable value, before GST', icon: '💰' })}
+      ${statCard({ label: 'Lots available', value: avail.length, detail: num(avail.reduce((s, l) => s + l.kg, 0) / 1000) + ' tonnes on offer', icon: 'factory' })}
+      ${statCard({ label: 'Your orders', value: orders.length, detail: 'Placed through ScrapHub', icon: 'box' })}
+      ${statCard({ label: 'Tonnage bought', value: num(kg / 1000) + ' t', detail: 'Across all orders', icon: 'scale' })}
+      ${statCard({ label: 'Order value', value: inr(spend), detail: 'Taxable value, before GST', icon: 'coins' })}
     </div>
     <div class="split even mt-6">
       <section class="card"><div class="card-h"><h3>Supply on the marketplace</h3><a class="btn btn-2 btn-sm" href="#/factory/market">Browse</a></div>
@@ -667,7 +667,7 @@ function viewFactoryOverview() {
         <div class="card-b">${orders.length ? orders.slice(0, 5).map(o => `<div class="kv">
             <span class="k trunc" style="max-width:62%">${esc(o.title)}</span>
             <span class="v">${inr(o.taxable)}</span></div>`).join('')
-          : emptyState({ icon: '📦', title: 'No orders yet', text: 'Buy a consolidated lot to see it here.' })}</div></section>
+          : emptyState({ icon: 'box', title: 'No orders yet', text: 'Buy a consolidated lot to see it here.' })}</div></section>
     </div>`;
 }
 
@@ -678,7 +678,7 @@ function factoryMarketHtml() {
     : (f.src === 'hub' ? DB.lots.filter(l => l.stage === 0)
       : DB.lots.filter(l => l.stage === 0).concat(DB.listings.filter(l => l.stage === 0)));
   const items = filterItems(pool, Object.assign({}, f, { src: 'all' }));
-  if (!items.length) return emptyState({ icon: '🏭', title: 'Nothing matches', text: 'Try another material or switch between hub lots and direct listings.' });
+  if (!items.length) return emptyState({ icon: 'factory', title: 'Nothing matches', text: 'Try another material or switch between hub lots and direct listings.' });
   return resultCount(items.length, f.src === 'household' ? 'direct listing' : 'lot') +
     `<div class="listgrid">${items.map(it => {
       const isLot = it.source === 'hub';
@@ -706,7 +706,7 @@ function viewFactoryMarket() {
 }
 function viewFactoryOrders() {
   const orders = myOrders();
-  if (!orders.length) return emptyState({ icon: '📦', title: 'No orders yet',
+  if (!orders.length) return emptyState({ icon: 'box', title: 'No orders yet',
     text: 'Orders you place on the marketplace appear here with their tax breakdown.',
     action: '<a class="btn" href="#/factory/market">Browse marketplace</a>' });
   return `<section class="card"><div class="tw"><table>
@@ -756,9 +756,9 @@ A.order = async d => {
 };
 function certificateHtml(o) {
   const no = 'EPR-' + new Date().getFullYear() + '-' + String(o.id || '').replace(/\D/g, '').padStart(5, '0');
-  return { no, html: `<div class="cert"><div class="seal">🌿</div>
+  return { no, html: `<div class="cert"><div class="seal">${ico('leaf')}</div>
       <h3>EPR traceability certificate</h3>
-      <div class="t-xs muted">Preview ${esc(no)} · ScrapDaddy demo — not a CPCB-issued document</div>
+      <div class="t-xs muted">Preview ${esc(no)} · ScrapHub demo — not a CPCB-issued document</div>
       <div class="mt-4" style="text-align:left">
         <div class="kv"><span class="k">Material</span><span class="v">${esc(o.title)}</span></div>
         <div class="kv"><span class="k">Category · HSN</span><span class="v">${esc(CATS[o.cat].label)} · ${esc(o.hsn)}</span></div>
@@ -766,7 +766,7 @@ function certificateHtml(o) {
         <div class="kv"><span class="k">GST</span><span class="v">${o.gstPct != null ? o.gstPct : CATS[o.cat].gst}%</span></div>
         <div class="kv"><span class="k">CO₂ saved</span><span class="v">${num(o.co2)} kg</span></div>
       </div></div>
-    <div class="mt-3">${notice('Certificates are generated locally for demonstration. Real CPCB EPR credits require a registered recycler account and audited weighbridge records.', 'amber', '⚠️')}</div>` };
+    <div class="mt-3">${notice('Certificates are generated locally for demonstration. Real CPCB EPR credits require a registered recycler account and audited weighbridge records.', 'amber', 'alert')}</div>` };
 }
 A.cert = d => {
   const o = DB.orders.find(x => x.id === d.id);
@@ -812,7 +812,7 @@ function priceRowsHtml() {
     }
     return !q || (p.label + ' ' + p.material).toLowerCase().indexOf(q) >= 0;
   });
-  if (!rows.length) return emptyState({ icon: '🔍', title: 'No materials match', text: 'Try a different search or category.' });
+  if (!rows.length) return emptyState({ icon: 'search', title: 'No materials match', text: 'Try a different search or category.' });
   return `<section class="card"><div class="tw"><table>
     <thead><tr><th>Material</th><th class="n">Price</th><th>Published range</th><th>Source</th><th>Updated</th></tr></thead>
     <tbody>${rows.map(p => {
@@ -848,13 +848,13 @@ function viewPrices() {
 
   const banner = loadFailed
     ? notice(`<strong>The price book could not be loaded.</strong> Showing the rates built into the app instead.
-        <span class="t-xs">(${esc(Pricing.error || '')})</span>`, 'danger', '⚠️')
+        <span class="t-xs">(${esc(Pricing.error || '')})</span>`, 'danger', 'alert')
     : notice(`<strong>These are reference prices, not live market data.</strong> Each row shows where its number came from
-        and when it was last changed. They guide you; the amount paid is agreed at pickup after weighing.`, 'amber', 'ℹ️');
+        and when it was last changed. They guide you; the amount paid is agreed at pickup after weighing.`, 'amber', 'info');
 
   return `${banner}
     <div class="toolbar mt-4">
-      <div class="input-group"><span class="ic">🔍</span>
+      <div class="input-group"><span class="ic">${ico('search')}</span>
         <input class="input" type="search" data-filter="q" value="${esc(f.q)}" placeholder="Search a material…" aria-label="Search materials">
       </div>
       <div class="chips">${CAT_FILTERS.map(([k, l]) =>
@@ -865,7 +865,7 @@ function viewPrices() {
           ${Pricing.regions().map(r => `<option value="${esc(r.code)}"${r.code === Pricing.region ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}
         </select>
       </label>
-      <button class="btn btn-2 btn-sm" data-act="reloadPrices">↻ Refresh</button>
+      <button class="btn btn-2 btn-sm" data-act="reloadPrices">${ico('refresh')} Refresh</button>
       ${isAdmin ? '<a class="btn btn-2 btn-sm" href="#/admin/rates">Edit</a>' : ''}
     </div>
     <div class="resbar"><span class="n">${
@@ -900,8 +900,8 @@ function viewVendorPlan() {
             <div class="strong" style="font-size:22px">${esc(current.name)}${current.price ? ' · ' + inr(current.price) + '/month' : ' · free'}</div>
             ${unpaid && sub.planId !== current.id ? `<div class="mt-2">${notice(
               `<strong>${esc(planById(sub.planId).name)} is not active.</strong> It starts only once payment is confirmed,
-               so you are still on ${esc(current.name)}.`, 'amber', '⏳')}</div>` : ''}
-            ${sub.cancelAtPeriodEnd ? `<div class="mt-2">${notice('This plan will not renew. You keep its features until the period ends.', 'amber', 'ℹ️')}</div>` : ''}
+               so you are still on ${esc(current.name)}.`, 'amber', 'hourglass')}</div>` : ''}
+            ${sub.cancelAtPeriodEnd ? `<div class="mt-2">${notice('This plan will not renew. You keep its features until the period ends.', 'amber', 'info')}</div>` : ''}
             ${sub.renewsAt ? `<div class="t-sm muted mt-2">Renews ${new Date(sub.renewsAt).toLocaleDateString('en-IN')}</div>` : ''}
           </div>
           <div>
@@ -930,8 +930,8 @@ function viewVendorPlan() {
           <div class="row-between"><h4>${esc(p.name)}</h4>${isCurrent ? badge('Current', 'brand') : isRequested ? badge('Awaiting payment', 'amber') : ''}</div>
           <div class="plan-price">${p.price ? inr(p.price) : 'Free'}${p.price ? '<span>/month</span>' : ''}</div>
           <p class="t-sm muted">${esc(p.tagline)}</p>
-          <ul class="plan-feat">${p.features.map(ft => `<li><span class="tick">✓</span>${esc(ft)}</li>`).join('')}
-            ${p.limits.map(l => `<li class="no"><span class="tick">✕</span>${esc(l)}</li>`).join('')}</ul>
+          <ul class="plan-feat">${p.features.map(ft => `<li><span class="tick">${ico('check')}</span>${esc(ft)}</li>`).join('')}
+            ${p.limits.map(l => `<li class="no"><span class="tick">${ico('close')}</span>${esc(l)}</li>`).join('')}</ul>
           ${isCurrent ? '<button class="btn btn-2 btn-block" disabled>Your plan</button>'
             : `<button class="btn${p.price ? '' : ' btn-2'} btn-block" data-act="planChange" data-v="${p.id}">
                  ${p.price > current.price ? 'Upgrade' : 'Switch'} to ${esc(p.name)}</button>`}
@@ -954,7 +954,7 @@ A.planChange = async d => {
   const res = await Subscriptions.requestChange(v.id, d.v);
   Router.render();
   const note = $('#billingNote');
-  if (note && !res.ok) note.innerHTML = notice(esc(res.message), 'amber', '⏳');
+  if (note && !res.ok) note.innerHTML = notice(esc(res.message), 'amber', 'hourglass');
   toast(res.message, res.ok ? 'ok' : 'warn');
 };
 A.planCancel = async () => {
@@ -986,8 +986,8 @@ function viewAccount() {
       <button class="btn" data-act="saveProfile">Save changes</button>
       ${v ? `<div class="divider"></div><h4>Vendor record</h4>
         <div class="kv"><span class="k">Hub</span><span class="v">${esc(v.hub)}</span></div>
-        <div class="kv"><span class="k">ID check</span><span class="v">${v.kycVerified ? '✅ Verified' : '⏳ Pending'}</span></div>
-        <div class="kv"><span class="k">Scale check</span><span class="v">${v.scaleVerified ? '✅ Verified' : '⏳ Pending'}</span></div>
+        <div class="kv"><span class="k">ID check</span><span class="v">${v.kycVerified ? `${ico('check')} Verified` : '⏳ Pending'}</span></div>
+        <div class="kv"><span class="k">Scale check</span><span class="v">${v.scaleVerified ? `${ico('check')} Verified` : '⏳ Pending'}</span></div>
         <div class="kv"><span class="k">Status</span><span class="v">${badge(v.status === 'approved' ? 'Approved' : 'Pending approval', v.status === 'approved' ? 'brand' : 'amber')}</span></div>` : ''}
     </section>
     <section class="card card-p">
@@ -1030,7 +1030,7 @@ function integrationsCard() {
   };
   return `<section class="card card-p mt-4">
     <h3>Integrations</h3>
-    <p class="t-sm muted" style="margin:4px 0 14px">Photo analysis, the assistant and payments run on a ScrapDaddy
+    <p class="t-sm muted" style="margin:4px 0 14px">Photo analysis, the assistant and payments run on a ScrapHub
       backend that holds the API keys. Keys are never stored in the browser. Leave the address blank to use a backend
       deployed alongside this site.</p>
     ${field({ label: 'Backend address', name: 'api_base', value: base || '',
@@ -1041,7 +1041,7 @@ function integrationsCard() {
       <button class="btn btn-2" data-act="testApi">Test connection</button>
     </div>
     ${h ? `<div class="mt-4">
-      ${h.ok ? '' : notice(esc(h.error || 'No backend is reachable at that address.'), 'amber', '⚠️')}
+      ${h.ok ? '' : notice(esc(h.error || 'No backend is reachable at that address.'), 'amber', 'alert')}
       <div class="mt-3">
         ${row('Photo analysis (OpenAI)', h.providers && h.providers.vision)}
         ${row('Assistant (Groq)', h.providers && h.providers.chat)}
@@ -1049,7 +1049,7 @@ function integrationsCard() {
       </div>
       ${h.providers && h.providers.payments && h.providers.payments.persistence === 'missing'
         ? notice(`Payments can be taken but not stored: subscription state lives in each browser, which a payment webhook
-            cannot reach. Activating paid plans automatically needs a database. See <code>api/billing/webhook.js</code>.`, 'amber', 'ℹ️') : ''}
+            cannot reach. Activating paid plans automatically needs a database. See <code>api/billing/webhook.js</code>.`, 'amber', 'info') : ''}
     </div>` : '<p class="t-sm muted mt-3">Not tested yet.</p>'}
   </section>`;
 }
