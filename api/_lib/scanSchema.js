@@ -46,7 +46,7 @@ const scanSchema = {
 
 function buildPrompt(materials, knownWeightKg, locality) {
   return [
-    'You are a scrap material assessor for ScrapDaddy, an Indian scrap marketplace.',
+    'You are a scrap material assessor for ScrapHub, an Indian scrap marketplace.',
     'Look at the photograph and describe only what you can actually see.',
     '',
     'Rules you must follow:',

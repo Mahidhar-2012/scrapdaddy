@@ -1,4 +1,4 @@
-# ScrapDaddy — deployment
+# ScrapHub — deployment
 
 The app is in two parts:
 
@@ -27,7 +27,7 @@ Your current URL stays the same. Only the `api/` folder goes somewhere else.
      (`gemini` + `GEMINI_API_KEY`, or `openai` + `OPENAI_API_KEY`)
    - `ALLOWED_ORIGINS` — set to `https://mahidhar-2012.github.io`
 3. **Redeploy** so the variables take effect.
-4. **Point the app at it** — open ScrapDaddy, sign in as an administrator, go to
+4. **Point the app at it** — open ScrapHub, sign in as an administrator, go to
    **Settings → Integrations**, enter `https://<your-project>.vercel.app/api`
    and press **Save and test**. The panel reports, per provider, whether the key
    works and whether the model is actually available to it.
@@ -156,7 +156,7 @@ Setting it up needs three free services and about fifteen minutes.
 ### 2. Email — Resend
 
 1. Create a key at [resend.com/api-keys](https://resend.com/api-keys) -> `RESEND_API_KEY`.
-2. Set `EMAIL_FROM`. `ScrapDaddy <onboarding@resend.dev>` works immediately but
+2. Set `EMAIL_FROM`. `ScrapHub <onboarding@resend.dev>` works immediately but
    only delivers to the address you signed up with — fine for testing, no use
    for real users. For those, verify your own domain in Resend and send from it.
 
@@ -175,7 +175,7 @@ session at once.
 Then check:
 
 ```
-https://your-project.vercel.app/api/health
+https://scraphub.vercel.app/api/health
 ```
 
 `providers.accounts.mode` should read `server`. Add `?probe=1` and the database

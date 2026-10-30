@@ -1,5 +1,5 @@
 {
-  "$comment": "ScrapDaddy price book. Edit this file to change prices - no application code needs to change. Every entry must carry a source, a type and an updatedAt. type: 'vendor_quote' = a real offer from a named vendor; 'market_reference' = a published rate card or market feed; 'indicative' = a platform estimate, not an offer.",
+  "$comment": "ScrapHub price book. Edit this file to change prices - no application code needs to change. Every entry must carry a source, a type and an updatedAt. type: 'vendor_quote' = a real offer from a named vendor; 'market_reference' = a published rate card or market feed; 'indicative' = a platform estimate, not an offer.",
   "schemaVersion": 1,
   "currency": "INR",
   "defaultRegion": "IN",
@@ -21,11 +21,11 @@
     }
   ],
   "sources": {
-    "scrapdaddy-ratecard": {
-      "name": "ScrapDaddy rate card",
+    "scraphub-ratecard": {
+      "name": "ScrapHub rate card",
       "type": "market_reference",
       "url": null,
-      "note": "Rates paid to households at the door, maintained by the ScrapDaddy operations team. Quoted as a range because the amount paid depends on condition, sorting and quantity; the figure shown is the midpoint. The final amount is agreed at pickup after weighing."
+      "note": "Rates paid to households at the door, maintained by the ScrapHub operations team. Quoted as a range because the amount paid depends on condition, sorting and quantity; the figure shown is the midpoint. The final amount is agreed at pickup after weighing."
     }
   },
   "prices": [
@@ -34,104 +34,104 @@
       "region": "IN",
       "unit": "kg",
       "price": 1075,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         1000,
         1150
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "brass",
       "region": "IN",
       "unit": "kg",
       "price": 660,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         600,
         720
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "aluminium",
       "region": "IN",
       "unit": "kg",
       "price": 195,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         170,
         220
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "iron",
       "region": "IN",
       "unit": "kg",
       "price": 38,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         30,
         45
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "plastic",
       "region": "IN",
       "unit": "kg",
       "price": 12,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         10,
         15
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "paper",
       "region": "IN",
       "unit": "kg",
       "price": 14,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         12,
         15
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "cardboard",
       "region": "IN",
       "unit": "kg",
       "price": 8,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         7,
         9
       ],
-      "rangeSource": "scrapdaddy-ratecard"
+      "rangeSource": "scraphub-ratecard"
     },
     {
       "material": "ac",
       "region": "IN",
       "unit": "piece",
       "price": 5500,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         4500,
         6500
       ],
-      "rangeSource": "scrapdaddy-ratecard",
+      "rangeSource": "scraphub-ratecard",
       "note": "Higher for copper-coil units, lower for aluminium coil."
     },
     {
@@ -139,13 +139,13 @@
       "region": "IN",
       "unit": "piece",
       "price": 1150,
-      "source": "scrapdaddy-ratecard",
+      "source": "scraphub-ratecard",
       "updatedAt": "2026-10-30T05:49:32Z",
       "marketRange": [
         800,
         1500
       ],
-      "rangeSource": "scrapdaddy-ratecard",
+      "rangeSource": "scraphub-ratecard",
       "note": "Higher for double-door, lower for single-door."
     }
   ],

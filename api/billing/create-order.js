@@ -44,7 +44,7 @@ module.exports = handler(['POST'], async (req, res) => {
         amount: rupees * 100,          // Razorpay works in paise
         currency: 'INR',
         receipt: 'sd_' + planId + '_' + vendorId + '_' + Date.now(),
-        notes: { vendorId, planId, product: 'scrapdaddy-subscription' },
+        notes: { vendorId, planId, product: 'scraphub-subscription' },
       }),
     }, 20000);
   } catch (e) {

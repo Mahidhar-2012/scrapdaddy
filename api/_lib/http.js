@@ -39,7 +39,7 @@ const fail = (res, status, error, extra) => send(res, status, Object.assign({ er
 /** Wraps a handler with CORS, preflight and method checking. */
 function handler(methods, fn) {
   return async function (req, res) {
-    if (!applyCors(req, res)) return fail(res, 403, 'This origin is not allowed to call the ScrapDaddy API.');
+    if (!applyCors(req, res)) return fail(res, 403, 'This origin is not allowed to call the ScrapHub API.');
     if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }
     if (methods.indexOf(req.method) < 0) {
       res.setHeader('Allow', methods.join(', '));

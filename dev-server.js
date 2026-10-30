@@ -75,6 +75,6 @@ const server = http.createServer(async (req, res) => {
 
 const port = Number(process.env.PORT || 3000);
 server.listen(port, () => {
-  console.log('ScrapDaddy dev server → http://localhost:' + port);
+  console.log('ScrapHub dev server → http://localhost:' + port);
   console.log('API health             → http://localhost:' + port + '/api/health');
 });

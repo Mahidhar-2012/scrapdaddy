@@ -123,7 +123,7 @@ module.exports = handler(['GET'], async (req, res) => {
   }
 
   send(res, 200, {
-    service: 'scrapdaddy-api',
+    service: 'scraphub-api',
     time: new Date().toISOString(),
     // Diagnostic: which variables the running function can see. Only presence
     // is reported for secrets; VISION_PROVIDER is not a secret so it is echoed

@@ -1,4 +1,4 @@
--- ScrapDaddy database schema
+-- ScrapHub database schema
 -- Run once in Supabase: SQL Editor -> New query -> paste -> Run.
 --
 -- Row Level Security is enabled with no policies on every table. That is

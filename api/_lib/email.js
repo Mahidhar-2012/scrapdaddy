@@ -15,7 +15,7 @@ function creds() {
   const from = (process.env.EMAIL_FROM || '').trim();
   if (!key) return { ok: false, reason: 'RESEND_API_KEY is not set' };
   if (key.length < 20) return { ok: false, reason: 'RESEND_API_KEY looks too short' };
-  if (!from) return { ok: false, reason: 'EMAIL_FROM is not set (e.g. ScrapDaddy <onboarding@resend.dev>)' };
+  if (!from) return { ok: false, reason: 'EMAIL_FROM is not set (e.g. ScrapHub <onboarding@resend.dev>)' };
   return { ok: true, key, from };
 }
 const configured = () => creds().ok;
@@ -25,7 +25,7 @@ const esc = s => String(s == null ? '' : s)
 
 /** Plain, high-contrast markup — email clients are not browsers. */
 function otpTemplate({ code, minutes, purpose }) {
-  const heading = purpose === 'reset' ? 'Reset your ScrapDaddy password' : 'Your ScrapDaddy sign-in code';
+  const heading = purpose === 'reset' ? 'Reset your ScrapHub password' : 'Your ScrapHub sign-in code';
   const lead = purpose === 'reset'
     ? 'Use this code to confirm it is really you, then choose a new password.'
     : 'Use this code to sign in.';
@@ -47,7 +47,7 @@ function otpTemplate({ code, minutes, purpose }) {
     <tr><td style="padding:8px 28px 28px">
       <p style="margin:0;color:#6D7F74;font-size:12px;line-height:1.5">
         If you did not ask for this, ignore this email — nobody can sign in without the code.
-        Never share it with anyone, including anyone claiming to be from ScrapDaddy.
+        Never share it with anyone, including anyone claiming to be from ScrapHub.
       </p>
     </td></tr>
   </table>
@@ -92,11 +92,11 @@ async function send({ to, subject, html, text }) {
 }
 
 async function sendOtp({ to, code, minutes, purpose }) {
-  const subject = purpose === 'reset' ? 'Reset your ScrapDaddy password' : `${code} is your ScrapDaddy code`;
+  const subject = purpose === 'reset' ? 'Reset your ScrapHub password' : `${code} is your ScrapHub code`;
   return send({
     to, subject,
     html: otpTemplate({ code, minutes, purpose }),
-    text: `Your ScrapDaddy code is ${code}. It expires in ${minutes} minutes and can be used once. ` +
+    text: `Your ScrapHub code is ${code}. It expires in ${minutes} minutes and can be used once. ` +
           'If you did not ask for this, ignore this email.',
   });
 }
